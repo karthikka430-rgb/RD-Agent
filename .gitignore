@@ -1,0 +1,7 @@
+backend/instance/
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+outputs/*.zip

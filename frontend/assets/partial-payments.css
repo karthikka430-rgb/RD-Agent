@@ -1,0 +1,53 @@
+/* Partial-installment presentation: compact enough for a monthly ledger. */
+.status.partial {
+  background: #fff5e9;
+  color: #b54708;
+}
+
+.balance-cell strong {
+  display: block;
+}
+
+.receipt-list {
+  display: grid;
+  gap: .4rem;
+  min-width: 13rem;
+}
+
+.receipt-list > div {
+  border-left: 2px solid #bdeee3;
+  padding-left: .45rem;
+}
+
+.receipt-list code {
+  display: block;
+  font-size: .7rem;
+  overflow-wrap: anywhere;
+}
+
+.receipt-summary strong {
+  color: #0f766e;
+}
+
+.internal-backup-panel {
+  margin-top: 1rem;
+}
+
+.backup-status {
+  font-weight: 750;
+  color: #b54708 !important;
+}
+
+.backup-status.online {
+  color: #067647 !important;
+}
+
+.backup-status.offline {
+  color: #b54708 !important;
+}
+
+@media (min-width: 881px) {
+  .metric-grid {
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  }
+}

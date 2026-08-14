@@ -1,0 +1,44 @@
+.agent-menu {
+  cursor: pointer;
+  border-radius: .55rem;
+  padding: .35rem .45rem;
+  transition: background .15s ease;
+}
+
+.agent-menu:hover,
+.agent-menu:focus-visible {
+  background: #f2fbfa;
+  outline: none;
+}
+
+.agent-profile-card {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .85rem;
+  border: 1px solid #d9eeeb;
+  border-radius: .65rem;
+  background: #f4fbfa;
+  margin-bottom: 1rem;
+}
+
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 50%;
+  background: #d7f2ee;
+  color: #0f766e;
+  font-weight: 800;
+}
+
+.agent-profile-card h4,
+.agent-profile-card p {
+  margin: 0;
+}
+
+.agent-profile-card p { color: #697386; font-size: .75rem; margin-top: .14rem; }
+.agent-profile-details { grid-template-columns: 1fr; }
+.agent-profile-details strong { overflow-wrap: anywhere; }
+.optional-label { color: #98a2b3; font-weight: 600; }

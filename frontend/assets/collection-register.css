@@ -1,0 +1,39 @@
+.collection-check {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.collection-check input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.collection-check span {
+  width: 2.25rem;
+  height: 1.25rem;
+  border-radius: 2rem;
+  background: #cbd5e1;
+  position: relative;
+  transition: background .18s;
+}
+
+.collection-check span::after {
+  content: "";
+  position: absolute;
+  width: .9rem;
+  height: .9rem;
+  left: .18rem;
+  top: .175rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18);
+  transition: transform .18s;
+}
+
+.collection-check input:checked + span { background: #0f766e; }
+.collection-check input:checked + span::after { transform: translateX(.95rem); }
+.collection-check input:focus-visible + span { outline: 3px solid rgba(15, 118, 110, .2); outline-offset: 2px; }
+.collection-check input:disabled + span { opacity: .5; cursor: wait; }

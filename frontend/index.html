@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>RD Agent Management System</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="stylesheet" href="/assets/collection-register.css" />
+    <link rel="stylesheet" href="/assets/agent-profile.css" />
+    <link rel="stylesheet" href="/assets/partial-payments.css" />
+  </head>
+  <body>
+    <div id="auth-shell" class="auth-shell">
+      <section class="auth-intro">
+        <div class="brand brand-light"><span class="brand-mark">₹</span> RD Agent</div>
+        <div>
+          <p class="eyebrow">POST OFFICE RECURRING DEPOSITS</p>
+          <h1>Every collection,<br />accounted for.</h1>
+          <p class="intro-copy">A dependable workspace for RD agents to manage customers, monthly installments, pending collections, reports, and secure backups.</p>
+        </div>
+        <div class="intro-points">
+          <span>✓ Agent-isolated records</span><span>✓ Auditable financial changes</span><span>✓ Duplicate payment protection</span>
+        </div>
+      </section>
+      <section class="auth-card-wrap">
+        <form id="login-form" class="auth-card" novalidate>
+          <div class="auth-heading"><p class="eyebrow teal">WELCOME BACK</p><h2>Sign in to your workspace</h2><p>Your records are private to your agent account.</p></div>
+          <label>Phone number<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="30" placeholder="98765 43210" /></label>
+          <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="12" placeholder="Your password" /></label>
+          <button class="button primary wide" type="submit">Sign in <span>→</span></button>
+          <p class="auth-switch">New RD agent? <button type="button" class="link-button" data-auth-mode="register">Create your secure account</button></p>
+        </form>
+        <form id="register-form" class="auth-card hidden" novalidate>
+          <div class="auth-heading"><p class="eyebrow teal">GET STARTED</p><h2>Create agent account</h2><p>Set up your private RD collection workspace.</p></div>
+          <div class="field-grid"><label>Full name<input name="name" required maxlength="120" placeholder="Agent name" /></label><label>Phone<input name="phone" required maxlength="30" inputmode="tel" placeholder="98765 43210" /></label></div>
+          <label>Email <span class="optional-label">(optional)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com" /></label>
+          <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="12" placeholder="At least 12 characters" /></label>
+          <button class="button primary wide" type="submit">Create secure account <span>→</span></button>
+          <p class="auth-switch">Already registered? <button type="button" class="link-button" data-auth-mode="login">Sign in instead</button></p>
+        </form>
+      </section>
+    </div>
+
+    <div id="app-shell" class="app-shell hidden">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand"><span class="brand-mark">₹</span> RD Agent</div>
+        <p class="sidebar-label">WORKSPACE</p>
+        <nav id="primary-nav" aria-label="Primary navigation">
+          <button class="nav-item active" data-view="dashboard"><span>▦</span> Dashboard</button>
+          <button class="nav-item" data-view="collections"><span>✓</span> Collection register</button>
+          <button class="nav-item" data-view="customers"><span>♙</span> Customers</button>
+          <button class="nav-item" data-view="pending"><span>◷</span> Pending collections</button>
+          <button class="nav-item" data-view="reports"><span>▤</span> Reports</button>
+          <button class="nav-item" data-view="backups"><span>⌁</span> Backup & restore</button>
+        </nav>
+        <div class="sidebar-footer"><div class="secure-note"><span>◈</span><div><strong>Secure records</strong><small>Changes are audit logged</small></div></div><button id="logout-button" class="nav-item logout"><span>⇥</span> Sign out</button></div>
+      </aside>
+      <main class="main-content">
+        <header class="topbar"><button id="menu-button" class="icon-button mobile-only" aria-label="Open navigation">☰</button><div><p id="page-kicker" class="eyebrow teal">OVERVIEW</p><h1 id="page-title">Dashboard</h1></div><div class="agent-menu"><div class="avatar" id="agent-initial">A</div><div><strong id="agent-name">Agent</strong><small>RD collection account</small></div></div></header>
+
+        <section id="view-dashboard" class="view active">
+          <div class="page-actions"><div><h2>Collection overview</h2><p id="period-label">Current month</p></div><button class="button primary" data-open-customer>Add customer <span>＋</span></button></div>
+          <div id="metric-grid" class="metric-grid"></div>
+          <section class="panel"><div class="panel-header"><div><h3>Recent transactions</h3><p>Latest payments recorded in your account</p></div><button class="text-button" data-nav="customers">View customers →</button></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Period</th><th>Receipt</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recent-table"></tbody></table></div></section>
+        </section>
+
+        <section id="view-collections" class="view">
+          <div class="page-actions"><div><h2>Collection register</h2><p>Mark monthly RD installments paid as you collect them.</p></div><div class="inline-controls"><input id="collection-month" type="month" /><button id="refresh-collections" class="button secondary">Load month</button></div></div>
+          <div id="collection-metrics" class="metric-grid"></div>
+          <section class="panel"><div class="panel-header"><div><h3 id="collection-heading">Monthly collection cycle</h3><p>Each selected month lists active RD accounts whose term includes that month. Tick an account to record any amount received; its remaining balance stays pending until the installment is complete.</p></div></div><div class="table-wrap"><table><thead><tr><th>Paid</th><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid / remaining</th><th>Receipts</th><th>Status</th></tr></thead><tbody id="collections-table"></tbody></table></div></section>
+        </section>
+
+        <section id="view-customers" class="view">
+          <div class="page-actions"><div><h2>Customers</h2><p>Manage RD accounts and review payment history.</p></div><button class="button primary" data-open-customer>Add customer <span>＋</span></button></div>
+          <section class="panel"><div class="toolbar"><label class="search-input"><span>⌕</span><input id="customer-search" placeholder="Search name, account number, or phone" /></label><select id="customer-status"><option value="">All active records</option><option value="active">Active</option><option value="matured">Matured</option><option value="closed">Closed</option><option value="archived">Archived</option></select></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Account no.</th><th>Monthly RD</th><th>Duration</th><th>Status</th><th class="right">Actions</th></tr></thead><tbody id="customers-table"></tbody></table></div><div id="customer-pagination" class="pagination"></div></section>
+        </section>
+
+        <section id="view-pending" class="view">
+          <div class="page-actions"><div><h2>Pending collections</h2><p>Customers with an unpaid or partly paid installment for the selected month.</p></div><div class="inline-controls"><input id="pending-month" type="month" /><button id="refresh-pending" class="button secondary">Refresh</button></div></div>
+          <section class="panel"><div class="toolbar"><label class="search-input"><span>⌕</span><input id="pending-search" placeholder="Search pending customers" /></label><span id="pending-summary" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid</th><th>Remaining</th><th>Status</th><th class="right">Action</th></tr></thead><tbody id="pending-table"></tbody></table></div></section>
+        </section>
+
+        <section id="view-reports" class="view">
+          <div class="page-actions"><div><h2>Reports</h2><p>Review accurate collection records and export a shareable copy.</p></div></div>
+          <section class="panel"><div class="report-controls"><label>Report<select id="report-type"><option value="monthly">Monthly collection</option><option value="customers">Customer-wise summary</option><option value="pending">Pending collection</option></select></label><label id="report-period-field">Period<input id="report-month" type="month" /></label><button id="generate-report" class="button primary">Generate report</button><div class="export-buttons"><button class="button secondary" data-export="xlsx">Export Excel</button><button class="button secondary" data-export="pdf">Export PDF</button></div></div><div id="report-summary" class="report-summary"></div><div class="table-wrap"><table id="report-table"></table></div></section>
+        </section>
+
+        <section id="view-backups" class="view">
+          <div class="page-actions"><div><h2>Automatic backup & restore</h2><p>Private backup copies are saved inside your RD Agent application when you are online.</p></div><button id="create-internal-backup" class="button primary">Back up now</button></div>
+          <div class="backup-grid"><section class="panel backup-card"><div class="backup-icon">☁</div><h3>Automatic internal backup</h3><p id="backup-network-status" class="backup-status">Checking connection…</p><p>When the application detects an internet connection, it safely saves a new copy only if your records changed. Nothing is downloaded to your device.</p></section><section class="panel backup-card"><div class="backup-icon">↻</div><h3>Restore safely</h3><p>Choose a saved copy below. Restore is merge-only: existing records are never overwritten or deleted, and duplicate accounts or installments are skipped.</p><p class="muted">Each backup stays private to your agent account.</p></section></div><section class="panel internal-backup-panel"><div class="panel-header"><div><h3>Saved internal backups</h3><p>Restore points stored inside this application.</p></div><span id="backup-summary" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>Saved on</th><th>Type</th><th>Customers</th><th>Installments</th><th>Receipts</th><th class="right">Action</th></tr></thead><tbody id="internal-backups-table"></tbody></table></div></section><section class="notice-panel"><strong>Financial data protection</strong><p>Automatic snapshots are agent-isolated and audit logged. They remain inside this application's database, so keep the application database and server storage protected. Customer accounts and paid receipts are never deleted by restore.</p></section>
+        </section>
+      </main>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+    <script src="/assets/app.js?v=20260813-partial-collections"></script>
+  </body>
+</html>
