@@ -1,7 +1,13 @@
 backend/instance/
 backend/.venv/
+backend/backups/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .env
 outputs/*.zip
+frontend/node_modules/
+frontend/www/
+frontend/android/.idea/
+frontend/android/app/build/
+frontend/android/build/

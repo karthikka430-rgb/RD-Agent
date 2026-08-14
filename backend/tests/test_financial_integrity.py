@@ -73,7 +73,7 @@ def test_agent_logs_in_with_phone_number(app):
     assert sign_in.get_json()["agent"] == {
         "id": 1,
         "name": "Agent One",
-        "phone": "98765 43210",
+        "phone": "9876543210",
         "email": "phone-login@example.com",
     }
     email_attempt = app.test_client().post("/api/auth/login", json={"email": "phone-login@example.com", "password": "SafePassword12!"})

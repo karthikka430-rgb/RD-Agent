@@ -63,11 +63,27 @@ def parse_int_in_range(value, field, low, high):
     return parsed
 
 
+def normalize_phone(value):
+    """Return a canonical 10-digit form so one mobile number is one identity.
+
+    9945006105      -> 9945006105
+    09945006105     -> 9945006105
+    +919945006105   -> 9945006105
+    +91 99450 06105 -> 9945006105
+    """
+    digits = re.sub(r"[^0-9]", "", value or "")
+    if digits.startswith("91") and len(digits) == 12:
+        digits = digits[2:]
+    elif digits.startswith("0") and len(digits) == 11:
+        digits = digits[1:]
+    return digits
+
+
 def validate_phone(value):
     value = require_string({"phone": value}, "phone", 30)
     if not re.fullmatch(r"[0-9+() .-]{6,30}", value):
         raise ValidationError("Phone contains invalid characters.", "phone")
-    return value
+    return normalize_phone(value)
 
 
 def validate_email(value):

@@ -41,6 +41,10 @@ python run.py
 
 Open `http://127.0.0.1:5000`, create an agent account, and sign in.
 
+Local development uses SQLite by default (`backend/instance/rd_agent.db`). Production must set `DATABASE_URL` to PostgreSQL — see [Permanent storage](#permanent-storage-postgresql).
+
+Phone numbers are normalized to a canonical 10-digit form at registration, login, and profile updates, so `9945006105`, `09945006105`, and `+919945006105` are the same account. Existing pre-normalization databases may need the reset script: `python scripts\normalize_phones.py --yes` (backs up to `backend/backups/` first, then removes all agent accounts so agents re-register).
+
 For representative demo data:
 
 ```powershell
@@ -68,6 +72,52 @@ The included tests verify cross-agent isolation, database-backed duplicate-payme
 - The models use portable SQLAlchemy types and constraints. Set `DATABASE_URL` to a PostgreSQL SQLAlchemy URL and introduce Alembic migrations before a PostgreSQL rollout.
 - Internal snapshots protect against accidental in-app changes but reside in the same application database. For protection against server, disk, or database loss, secure the application database with infrastructure-level backups and restrict storage access.
 - Add rate limiting, password reset/email verification, centralized logging, and a separately authorized administrator role if deployed for a multi-agent organization.
+
+### Permanent storage (PostgreSQL)
+
+Production data **must not** live in the SQLite file under `backend/instance/`, which on hosting platforms such as Render sits on ephemeral disk and is wiped on every redeploy. Instead:
+
+1. Provision a PostgreSQL database (Render Managed Postgres is a good fit).
+2. Set `DATABASE_URL` in the hosting environment, for example `postgres://USER:PASSWORD@HOST:5432/DBNAME`. Render/Heroku's `postgres://` scheme is automatically normalized to the SQLAlchemy-compatible `postgresql+psycopg://` at startup.
+3. On first boot the application creates all tables from the models (`db.create_all()`). The tables are portable: `agents`, `customers`, `payments`, `payment_receipts`, `audit_logs`, `backup_snapshots`, `refresh_tokens`.
+4. The startup log prints the active engine. If it prints `Using SQLite (...)`, production is still on ephemeral storage — fix `DATABASE_URL` before entering real data.
+
+Run checks:
+
+```powershell
+cd backend
+python scripts\backup_db.py --verify     # confirms connectivity and record counts
+```
+
+### Backups and recovery plan
+
+- **Application-level backups:** the built-in "Backup & restore" screen stores agent-private JSON snapshots inside the database and is merge-only (it never overwrites or deletes financial records). These are convenient but live in the same database.
+- **Infrastructure-level backups (required):** take consistent dumps of the whole PostgreSQL database on a schedule.
+
+Back up the database:
+
+```powershell
+cd backend
+# PostgreSQL (production):
+DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME python scripts\backup_db.py --verify
+# Local SQLite (development only):
+python scripts\backup_db.py --verify
+```
+
+`backup_db.py` writes a custom-format dump to `backend/backups/` (PostgreSQL via `pg_dump`, SQLite via a consistent online copy). Store the resulting files off the application server (object storage, another machine).
+
+Recovery:
+
+- **PostgreSQL:** `pg_restore --clean --if-exists --dbname <DATABASE_URL> <backup-file>` — restore the whole database, then confirm with `python scripts\backup_db.py --verify`.
+- **SQLite (development only):** copy the `.sqlite3` backup over `backend/instance/rd_agent.db`.
+- **Application-level restore:** on the "Backup & restore" screen, restore an internal snapshot; duplicate accounts and installments are skipped, existing records are untouched.
+
+### No-data-loss deployment checklist
+
+1. Confirm `DATABASE_URL` points to PostgreSQL and the startup log says `Active database engine: postgresql`.
+2. Take a backup (`python scripts\backup_db.py`) before any deploy or schema change.
+3. Deploy new code — `db.create_all()` is additive and never drops or resets tables.
+4. After deploy, run `python scripts\backup_db.py --verify` and confirm agent/customer counts are unchanged.
 
 ## Financial-data behavior
 

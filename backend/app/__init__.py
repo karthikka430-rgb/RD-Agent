@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory, session
@@ -21,6 +22,19 @@ def create_app(config_object=Config):
     )
     app.config.from_object(config_object)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
+
+    if not app.debug and not app.testing:
+        logging.basicConfig(level=logging.INFO)
+
+    database_uri = app.config["SQLALCHEMY_DATABASE_URI"]
+    active_database = "postgresql" if database_uri.startswith("postgresql") else "sqlite"
+    app.logger.info("Active database engine: %s", active_database)
+    if active_database == "sqlite":
+        app.logger.warning(
+            "Using SQLite (%s). Production data must live in PostgreSQL; set DATABASE_URL "
+            "to a PostgreSQL URL to avoid losing data on redeploy.",
+            database_uri,
+        )
 
     @app.after_request
     def make_session_permanent(response):

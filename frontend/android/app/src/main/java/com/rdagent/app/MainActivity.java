@@ -7,7 +7,7 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
 
     @Override
-    protected void onStop() {
+    public void onStop() {
         super.onStop();
         CookieManager.getInstance().flush();
     }
