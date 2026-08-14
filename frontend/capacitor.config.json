@@ -1,0 +1,9 @@
+{
+  "appId": "com.rdagent.app",
+  "appName": "RD Agent",
+  "webDir": "www",
+  "server": {
+    "url": "https://rd-agent-4.onrender.com",
+    "cleartext": false
+  }
+}

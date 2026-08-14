@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import secrets
@@ -96,3 +97,11 @@ def ensure_csrf_token():
         token = secrets.token_urlsafe(32)
         session["csrf_token"] = token
     return token
+
+
+def generate_refresh_token():
+    return secrets.token_urlsafe(48)
+
+
+def hash_refresh_token(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

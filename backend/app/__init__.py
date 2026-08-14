@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, session
 
 from config import Config
 from .extensions import db
@@ -21,6 +21,11 @@ def create_app(config_object=Config):
     )
     app.config.from_object(config_object)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
+
+    @app.after_request
+    def make_session_permanent(response):
+        session.permanent = True
+        return response
 
     db.init_app(app)
 

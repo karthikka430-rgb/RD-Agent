@@ -2,12 +2,28 @@ from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, g, jsonify, request, session
 
 from ..extensions import db
-from ..models import Agent, private_email_placeholder
+from ..models import Agent, RefreshToken, private_email_placeholder, utcnow
 from ..services.audit_service import log_change
-from ..utils import ValidationError, api_error, ensure_csrf_token, require_string, validate_optional_email, validate_phone
+from ..utils import (
+    ValidationError,
+    api_error,
+    ensure_csrf_token,
+    generate_refresh_token,
+    hash_refresh_token,
+    require_string,
+    validate_optional_email,
+    validate_phone,
+)
 from .common import require_auth, require_csrf
 
 auth_bp = Blueprint("auth", __name__)
+
+
+def _issue_refresh_token(agent_id):
+    token = generate_refresh_token()
+    db.session.add(RefreshToken(agent_id=agent_id, token_hash=hash_refresh_token(token)))
+    db.session.commit()
+    return token
 
 
 @auth_bp.post("/register")
@@ -37,7 +53,8 @@ def register():
         return api_error("An account with that phone number or email already exists.", 409)
     session.clear()
     session["agent_id"] = agent.id
-    return jsonify({"agent": agent.public_dict(), "csrf_token": ensure_csrf_token()}), 201
+    refresh_token = _issue_refresh_token(agent.id)
+    return jsonify({"agent": agent.public_dict(), "csrf_token": ensure_csrf_token(), "refresh_token": refresh_token}), 201
 
 
 @auth_bp.post("/login")
@@ -53,13 +70,59 @@ def login():
         return api_error("Invalid phone number or password.", 401)
     session.clear()  # prevents session fixation on login
     session["agent_id"] = agent.id
-    return jsonify({"agent": agent.public_dict(), "csrf_token": ensure_csrf_token()})
+    refresh_token = _issue_refresh_token(agent.id)
+    return jsonify({"agent": agent.public_dict(), "csrf_token": ensure_csrf_token(), "refresh_token": refresh_token})
+
+
+@auth_bp.post("/refresh")
+def refresh():
+    """Restore a session from a device-persisted refresh token.
+
+    The token is rotated on every use: the presented token is revoked and a
+    fresh one is issued, so a lost or replayed token cannot be reused.
+    """
+    data = request.get_json(silent=True) or {}
+    raw_token = data.get("refresh_token")
+    if not isinstance(raw_token, str) or not raw_token:
+        return api_error("Refresh token is required.", 400, "refresh_token")
+    stored = RefreshToken.query.filter_by(token_hash=hash_refresh_token(raw_token)).first()
+    if not stored or stored.revoked_at:
+        return api_error("Session expired. Please sign in again.", 401)
+    agent = db.session.get(Agent, stored.agent_id)
+    if not agent:
+        return api_error("Session expired. Please sign in again.", 401)
+    stored.revoked_at = utcnow()
+    stored.last_used_at = utcnow()
+    new_token = _issue_refresh_token(agent.id)
+    session.clear()
+    session["agent_id"] = agent.id
+    return jsonify({"agent": agent.public_dict(), "csrf_token": ensure_csrf_token(), "refresh_token": new_token})
+
+
+@auth_bp.post("/token")
+@require_auth
+@require_csrf
+def mint_token():
+    """Issue a refresh token to the currently authenticated agent (CSRF protected).
+
+    Used so an already signed-in agent who has no stored device token can obtain
+    one without entering credentials again.
+    """
+    refresh_token = _issue_refresh_token(g.agent.id)
+    return jsonify({"refresh_token": refresh_token})
 
 
 @auth_bp.post("/logout")
 @require_auth
 @require_csrf
 def logout():
+    data = request.get_json(silent=True) or {}
+    raw_token = data.get("refresh_token")
+    if isinstance(raw_token, str) and raw_token:
+        stored = RefreshToken.query.filter_by(token_hash=hash_refresh_token(raw_token)).first()
+        if stored and stored.agent_id == g.agent.id and not stored.revoked_at:
+            stored.revoked_at = utcnow()
+            db.session.commit()
     session.clear()
     return "", 204
 

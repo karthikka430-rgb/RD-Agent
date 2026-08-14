@@ -64,6 +64,58 @@ function toast(message, type = '') {
   setTimeout(() => node.remove(), 4200);
 }
 
+const REFRESH_TOKEN_KEY = 'rdagent_refresh_token';
+const tokenStorage = {
+  async get() {
+    try {
+      if (window.Capacitor?.Plugins?.Preferences) {
+        const { value } = await window.Capacitor.Plugins.Preferences.get({ key: REFRESH_TOKEN_KEY });
+        if (value) return value;
+      }
+    } catch { /* fall back to web storage */ }
+    try { return localStorage.getItem(REFRESH_TOKEN_KEY); } catch { return null; }
+  },
+  async set(token) {
+    try {
+      if (window.Capacitor?.Plugins?.Preferences) {
+        await window.Capacitor.Plugins.Preferences.set({ key: REFRESH_TOKEN_KEY, value: token });
+        return;
+      }
+    } catch { /* fall back to web storage */ }
+    try { localStorage.setItem(REFRESH_TOKEN_KEY, token); } catch { /* ignore */ }
+  },
+  async clear() {
+    try {
+      if (window.Capacitor?.Plugins?.Preferences) {
+        await window.Capacitor.Plugins.Preferences.remove({ key: REFRESH_TOKEN_KEY });
+        return;
+      }
+    } catch { /* fall back to web storage */ }
+    try { localStorage.removeItem(REFRESH_TOKEN_KEY); } catch { /* ignore */ }
+  },
+};
+
+async function attemptSessionRefresh() {
+  const token = await tokenStorage.get();
+  if (!token) return false;
+  try {
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: token }),
+    });
+    if (!response.ok) return false;
+    const data = await response.json();
+    await tokenStorage.set(data.refresh_token);
+    state.csrf = data.csrf_token;
+    state.agent = data.agent;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function api(url, options = {}) {
   const config = { credentials: 'same-origin', ...options, headers: { ...(options.headers || {}) } };
   if (options.body && !(options.body instanceof FormData) && typeof options.body !== 'string') {
@@ -71,12 +123,23 @@ async function api(url, options = {}) {
     config.body = JSON.stringify(options.body);
   }
   if (state.csrf && !['GET', 'HEAD'].includes((config.method || 'GET').toUpperCase())) config.headers['X-CSRF-Token'] = state.csrf;
-  const response = await fetch(url, config);
+  const isAuthCall = url.startsWith('/api/auth/login') || url.startsWith('/api/auth/register');
+  let response = await fetch(url, config);
+  if (response.status === 401 && !isAuthCall && url !== '/api/auth/refresh') {
+    const restored = await attemptSessionRefresh();
+    if (restored) {
+      if (state.csrf && !['GET', 'HEAD'].includes((config.method || 'GET').toUpperCase())) config.headers['X-CSRF-Token'] = state.csrf;
+      response = await fetch(url, config);
+    }
+  }
   if (response.status === 204) return null;
   const contentType = response.headers.get('content-type') || '';
   const data = contentType.includes('application/json') ? await response.json() : null;
   if (!response.ok) {
-    if (response.status === 401) showAuth();
+    if (response.status === 401 && !isAuthCall) {
+      await tokenStorage.clear();
+      showAuth();
+    }
     throw new Error(data?.error || `Request failed (${response.status})`);
   }
   return data;
@@ -417,6 +480,7 @@ document.addEventListener('submit', async event => {
     const endpoint = form.id === 'login-form' ? '/api/auth/login' : '/api/auth/register';
     try {
       const result = await api(endpoint, { method: 'POST', body: Object.fromEntries(new FormData(form)) });
+      await tokenStorage.set(result.refresh_token);
       showApp(result.agent, result.csrf_token);
     } catch (error) {
       toast(error.message, 'error');
@@ -526,10 +590,11 @@ document.addEventListener('click', async event => {
   }
   if (button.id === 'logout-button') {
     try {
-      await api('/api/auth/logout', { method: 'POST' });
-    } finally {
-      showAuth();
-    }
+      const token = await tokenStorage.get();
+      await api('/api/auth/logout', { method: 'POST', body: token ? { refresh_token: token } : {} });
+    } catch { /* session is cleared on the device regardless */ }
+    await tokenStorage.clear();
+    showAuth();
   }
 });
 

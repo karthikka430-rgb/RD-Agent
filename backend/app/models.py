@@ -191,6 +191,33 @@ class BackupSnapshot(db.Model, SerializerMixin):
         }
 
 
+class RefreshToken(db.Model, SerializerMixin):
+    """A long-lived device credential used only to restore a Flask session.
+
+    Only the SHA-256 hash of the raw token is stored. Tokens are never exposed
+    to business routes and are revoked on explicit logout or rotation.
+    """
+
+    __tablename__ = "refresh_tokens"
+    __table_args__ = (db.Index("ix_refresh_tokens_agent", "agent_id"),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    agent_id = db.Column(db.Integer, db.ForeignKey("agents.id"), nullable=False, index=True)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    last_used_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    revoked_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    def public_dict(self):
+        return {
+            "id": self.id,
+            "agent_id": self.agent_id,
+            "created_at": self.created_at.isoformat(),
+            "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
+            "revoked_at": self.revoked_at.isoformat() if self.revoked_at else None,
+        }
+
+
 class AuditLog(db.Model, SerializerMixin):
     __tablename__ = "audit_logs"
     __table_args__ = (db.Index("ix_audit_agent_entity", "agent_id", "entity_type", "entity_id"),)
