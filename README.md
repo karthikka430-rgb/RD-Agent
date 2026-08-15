@@ -43,7 +43,7 @@ Open `http://127.0.0.1:5000`, create an agent account, and sign in.
 
 Local development uses SQLite by default (`backend/instance/rd_agent.db`). Production must set `DATABASE_URL` to PostgreSQL — see [Permanent storage](#permanent-storage-postgresql).
 
-Phone numbers are normalized to a canonical 10-digit form at registration, login, and profile updates, so `9945006105`, `09945006105`, and `+919945006105` are the same account. Existing pre-normalization databases may need the reset script: `python scripts\normalize_phones.py --yes` (backs up to `backend/backups/` first, then removes all agent accounts so agents re-register).
+Phone numbers are normalized to a canonical 10-digit form at registration, login, and profile updates, so `1234567890`, `01234567890`, and `+911234567890` are the same account. Existing pre-normalization databases may need the reset script: `python scripts\normalize_phones.py --yes` (backs up to `backend/backups/` first, then removes all agent accounts so agents re-register).
 
 For representative demo data:
 
