@@ -46,7 +46,7 @@ def customer_query(agent_id, search=None, status=None):
     if search:
         term = f"%{search.strip()}%"
         query = query.filter(or_(Customer.customer_name.ilike(term), Customer.account_number.ilike(term), Customer.phone.ilike(term)))
-    return query.order_by(Customer.customer_name.asc())
+    return query.order_by(Customer.start_date.asc(), Customer.created_at.asc(), Customer.id.asc())
 
 
 def should_be_due(customer, month, year):

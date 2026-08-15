@@ -34,7 +34,7 @@ def pending_customers(agent_id, month, year, search=None):
     if search:
         term = f"%{search.strip()}%"
         query = query.filter((Customer.customer_name.ilike(term)) | (Customer.account_number.ilike(term)) | (Customer.phone.ilike(term)))
-    return query.order_by(Customer.customer_name.asc())
+    return query.order_by(Customer.start_date.asc(), Customer.created_at.asc(), Customer.id.asc())
 
 
 @dashboard_bp.get("/")

@@ -34,7 +34,7 @@ def collection_register():
         month, year = requested_period()
     except ValidationError as exc:
         return api_error(exc.message, 400, exc.field)
-    customers = active_collection_customers_query(g.agent.id, month, year).order_by(Customer.customer_name.asc()).all()
+    customers = active_collection_customers_query(g.agent.id, month, year).order_by(Customer.start_date.asc(), Customer.created_at.asc(), Customer.id.asc()).all()
     customer_ids = [customer.id for customer in customers]
     payments = []
     if customer_ids:

@@ -35,10 +35,16 @@ def require_string(data, key, max_length=255):
 def parse_date(value, field):
     if not isinstance(value, str):
         raise ValidationError(f"{field.replace('_', ' ').title()} must be a valid date.", field)
+    val = value.strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%d.%m.%Y"):
+        try:
+            return datetime.strptime(val, fmt).date()
+        except ValueError:
+            pass
     try:
-        return date.fromisoformat(value)
+        return date.fromisoformat(val)
     except ValueError as exc:
-        raise ValidationError(f"{field.replace('_', ' ').title()} must use YYYY-MM-DD.", field) from exc
+        raise ValidationError(f"{field.replace('_', ' ').title()} must use YYYY-MM-DD or DD/MM/YYYY.", field) from exc
 
 
 def parse_positive_money(value, field):

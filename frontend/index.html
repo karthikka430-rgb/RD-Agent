@@ -2,43 +2,86 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#05685E" />
     <title>RD Agent Management System</title>
-    <link rel="stylesheet" href="/assets/styles.css?v=20260815-redesign" />
-    <link rel="stylesheet" href="/assets/collection-register.css?v=20260815-redesign" />
-    <link rel="stylesheet" href="/assets/agent-profile.css?v=20260815-redesign" />
-    <link rel="stylesheet" href="/assets/partial-payments.css?v=20260815-redesign" />
+    <link rel="stylesheet" href="/assets/styles.css?v=20260815-report-search" />
+    <link rel="stylesheet" href="/assets/collection-register.css?v=20260815-report-search" />
+    <link rel="stylesheet" href="/assets/agent-profile.css?v=20260815-report-search" />
+    <link rel="stylesheet" href="/assets/partial-payments.css?v=20260815-report-search" />
   </head>
   <body>
+    <!-- RD-AGENT CUSTOM BACKEND WAKEUP LOADING SCREEN -->
+    <div id="loading-screen" class="loading-screen" aria-live="polite">
+      <div class="loading-content">
+        <div class="brand brand-loading">
+          <span class="brand-mark">₹</span>
+          <span class="brand-text">RD Agent</span>
+        </div>
+        <p class="loading-subtext">POST OFFICE RECURRING DEPOSITS</p>
+        
+        <div class="spinner-wrapper" aria-hidden="true">
+          <svg class="custom-spinner" viewBox="0 0 60 60">
+            <circle class="spinner-track" cx="30" cy="30" r="22" fill="none" stroke-width="3" />
+            <circle class="spinner-dot" cx="30" cy="30" r="22" fill="none" stroke-width="5" />
+            <circle class="spinner-ring" cx="30" cy="30" r="22" fill="none" stroke-width="3" />
+          </svg>
+        </div>
+
+        <p class="loading-status">Connecting<span class="dots-anim">...</span></p>
+      </div>
+    </div>
+
     <div id="auth-shell" class="auth-shell">
-      <section class="auth-intro">
+      <div class="auth-banner">
         <div class="brand brand-light"><span class="brand-mark">₹</span> RD Agent</div>
-        <div>
-          <p class="eyebrow">POST OFFICE RECURRING DEPOSITS</p>
-          <h1>Every collection,<br />accounted for.</h1>
-          <p class="intro-copy">A dependable workspace for RD agents to manage customers, monthly installments, pending collections, reports, and secure backups.</p>
-        </div>
-        <div class="intro-points">
-          <span>✓ Agent-isolated records</span><span>✓ Auditable financial changes</span><span>✓ Duplicate payment protection</span>
-        </div>
-      </section>
+        <p class="banner-sub">POST OFFICE RECURRING DEPOSITS</p>
+      </div>
       <section class="auth-card-wrap">
         <form id="login-form" class="auth-card" novalidate>
-          <div class="auth-heading"><p class="eyebrow teal">WELCOME BACK</p><h2>Sign in to your workspace</h2><p>Your records are private to your agent account.</p></div>
-          <label>Phone number<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="30" placeholder="98765 43210" /></label>
-          <label>Password<span class="password-field"><input name="password" type="password" autocomplete="current-password" required minlength="12" placeholder="Your password" /><button type="button" class="password-toggle" data-password-toggle aria-label="Show password" aria-pressed="false"><svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="icon-eye-off hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M1 1l22 22"/></svg></button></span></label>
-          <button class="button primary wide" type="submit">Sign in <span>→</span></button>
-          <p class="auth-switch">New RD agent? <button type="button" class="link-button" data-auth-mode="register">Create your secure account</button></p>
+          <div class="auth-heading">
+            <h2>Welcome back!</h2>
+            <p class="auth-subtitle">Sign in to your workspace</p>
+            <p class="auth-note">Your records are private to your agent account.</p>
+          </div>
+          <label>Phone number
+            <div class="input-with-icon">
+              <input name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="30" placeholder="Enter your phone number" />
+              <span class="input-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+            </div>
+          </label>
+          <label>Password
+            <div class="password-field">
+              <input name="password" type="password" autocomplete="current-password" required minlength="12" placeholder="Enter your password" />
+              <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" aria-pressed="false">
+                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="icon-eye-off hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </label>
+          <button class="button primary wide" type="submit">Sign in</button>
+          <p class="auth-switch">New RD agent? <button type="button" class="link-button" data-auth-mode="register">Create your account</button></p>
         </form>
+
         <form id="register-form" class="auth-card hidden" novalidate>
-          <div class="auth-heading"><p class="eyebrow teal">GET STARTED</p><h2>Create agent account</h2><p>Set up your private RD collection workspace.</p></div>
-          <div class="field-grid"><label>Full name<input name="name" required maxlength="120" placeholder="Agent name" /></label><label>Phone<input name="phone" required maxlength="30" inputmode="tel" placeholder="98765 43210" /></label></div>
+          <div class="auth-heading">
+            <h2>Create account</h2>
+            <p class="auth-subtitle">Set up your RD workspace</p>
+            <p class="auth-note">Your records will be secure and private.</p>
+          </div>
+          <div class="field-grid">
+            <label>Full name<input name="name" required maxlength="120" placeholder="Agent name" /></label>
+            <label>Phone<input name="phone" required maxlength="30" inputmode="tel" placeholder="Enter phone number" /></label>
+          </div>
           <label>Email <span class="optional-label">(optional)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com" /></label>
           <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="12" placeholder="At least 12 characters" /></label>
-          <button class="button primary wide" type="submit">Create secure account <span>→</span></button>
+          <button class="button primary wide" type="submit">Create account</button>
           <p class="auth-switch">Already registered? <button type="button" class="link-button" data-auth-mode="login">Sign in instead</button></p>
         </form>
+        <div class="auth-security-footer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Your data is secure and always protected.</span>
+        </div>
       </section>
     </div>
 
@@ -47,54 +90,345 @@
         <div class="brand"><span class="brand-mark">₹</span> RD Agent</div>
         <p class="sidebar-label">WORKSPACE</p>
         <nav id="primary-nav" aria-label="Primary navigation">
-          <button class="nav-item active" data-view="dashboard"><span>▦</span> Dashboard</button>
-          <button class="nav-item" data-view="collections"><span>✓</span> Collection register</button>
-          <button class="nav-item" data-view="customers"><span>♙</span> Customers</button>
-          <button class="nav-item" data-view="pending"><span>◷</span> Pending collections</button>
-          <button class="nav-item" data-view="reports"><span>▤</span> Reports</button>
-          <button class="nav-item" data-view="backups"><span>⌁</span> Backup & restore</button>
+          <button class="nav-item active" data-view="dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="collections">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>Collection register</span>
+          </button>
+          <button class="nav-item" data-view="customers">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Customers</span>
+          </button>
+          <button class="nav-item" data-view="pending">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Pending collections</span>
+          </button>
+          <button class="nav-item" data-view="reports">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Reports</span>
+          </button>
+          <button class="nav-item" data-view="backups">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span>Backup & restore</span>
+          </button>
         </nav>
-        <div class="sidebar-footer"><div class="secure-note"><span>◈</span><div><strong>Secure records</strong><small>Changes are audit logged</small></div></div><button id="logout-button" class="nav-item logout"><span>⇥</span> Sign out</button></div>
+        <div class="sidebar-footer">
+          <div class="secure-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><strong>Secure records</strong><small>Changes are audit logged</small></div>
+          </div>
+          <button id="logout-button" class="nav-item logout"><span>⇥</span> Sign out</button>
+        </div>
       </aside>
+      <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
       <main class="main-content">
-        <header class="topbar"><button id="menu-button" class="icon-button mobile-only" aria-label="Open navigation">☰</button><div><p id="page-kicker" class="eyebrow teal">OVERVIEW</p><h1 id="page-title">Dashboard</h1></div><div class="agent-menu"><div class="avatar" id="agent-initial">A</div><div><strong id="agent-name">Agent</strong><small>RD collection account</small></div></div></header>
+        <header class="topbar">
+          <button id="menu-button" class="icon-button mobile-only" aria-label="Open navigation">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="header-titles">
+            <p id="page-kicker" class="eyebrow">OVERVIEW</p>
+            <h1 id="page-title">Dashboard</h1>
+          </div>
+          <div class="agent-menu" role="button" tabindex="0" aria-label="Open agent profile">
+            <div class="avatar" id="agent-initial">S</div>
+            <div class="agent-info-text">
+              <strong id="agent-name">Agent</strong>
+              <small>RD collection account</small>
+            </div>
+          </div>
+        </header>
 
+        <!-- DASHBOARD VIEW -->
         <section id="view-dashboard" class="view active">
-          <div class="page-actions"><div><h2>Collection overview</h2><p id="period-label">Current month</p></div><button class="button primary" data-open-customer>Add customer <span>＋</span></button></div>
-          <div id="metric-grid" class="metric-grid"></div>
-          <section class="panel"><div class="panel-header"><div><h3>Recent transactions</h3><p>Latest payments recorded in your account</p></div><button class="text-button" data-nav="customers">View customers →</button></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Period</th><th>Receipt</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recent-table"></tbody></table></div></section>
+          <div class="section-title-wrap">
+            <h2>Collection overview</h2>
+            <p id="period-label" class="subtitle">Collection status for Aug 2026</p>
+          </div>
+          <div id="metric-grid" class="metric-grid dashboard-metrics"></div>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Recent transactions</h3>
+                <p>Latest payments recorded in your account</p>
+              </div>
+              <button class="text-button" data-nav="customers">View all</button>
+            </div>
+            <div class="table-wrap">
+              <table class="clean-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th class="right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-table"></tbody>
+              </table>
+            </div>
+          </section>
         </section>
 
+        <!-- COLLECTION REGISTER VIEW -->
         <section id="view-collections" class="view">
-          <div class="page-actions"><div><h2>Collection register</h2><p>Mark monthly RD installments paid as you collect them.</p></div><div class="inline-controls"><input id="collection-month" type="month" /><button id="refresh-collections" class="button secondary">Load month</button></div></div>
-          <div id="collection-metrics" class="metric-grid"></div>
-          <section class="panel"><div class="panel-header"><div><h3 id="collection-heading">Monthly collection cycle</h3><p>Each selected month lists active RD accounts whose term includes that month. Tick an account to record any amount received; its remaining balance stays pending until the installment is complete.</p></div></div><div class="table-wrap"><table><thead><tr><th>Paid</th><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid / remaining</th><th>Receipts</th><th>Status</th><th class="right">Action</th></tr></thead><tbody id="collections-table"></tbody></table></div></section>
+          <div class="section-title-wrap">
+            <p class="subtitle">Mark monthly RD installments paid as you collect them.</p>
+          </div>
+
+          <div class="month-selector-card">
+            <div class="period-input-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input id="collection-month" type="month" />
+            </div>
+            <button id="refresh-collections" class="button secondary btn-load-month">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Load month
+            </button>
+          </div>
+
+          <div id="collection-metrics" class="metric-grid collection-summary-grid"></div>
+
+          <section class="panel">
+            <div class="table-toolbar">
+              <div class="search-input">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="collection-search" placeholder="Search customer by name or account no..." />
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="collection-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;"></th>
+                    <th>CUSTOMER</th>
+                    <th>ACC. NO.</th>
+                    <th>AMOUNT</th>
+                    <th>STATUS</th>
+                    <th class="right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="collections-table"></tbody>
+              </table>
+            </div>
+            <div id="collection-pagination" class="pagination"></div>
+          </section>
+
+          <div class="info-tip-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Tick a customer when payment is collected. Once marked as paid, the OFF button can be used to undo the payment if it was recorded by mistake.</span>
+          </div>
         </section>
 
+        <!-- CUSTOMERS VIEW -->
         <section id="view-customers" class="view">
-          <div class="page-actions"><div><h2>Customers</h2><p>Manage RD accounts and review payment history.</p></div><button class="button primary" data-open-customer>Add customer <span>＋</span></button></div>
-          <section class="panel"><div class="toolbar"><label class="search-input"><span>⌕</span><input id="customer-search" placeholder="Search name, account number, or phone" /></label><select id="customer-status"><option value="">All active records</option><option value="active">Active</option><option value="matured">Matured</option><option value="closed">Closed</option><option value="archived">Archived</option></select></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Account no.</th><th>Monthly RD</th><th>Duration</th><th>Status</th><th class="right">Actions</th></tr></thead><tbody id="customers-table"></tbody></table></div><div id="customer-pagination" class="pagination"></div></section>
+          <div class="section-title-wrap">
+            <p class="subtitle">Manage RD accounts and review payment history.</p>
+          </div>
+          <button class="button primary wide btn-add-customer" data-open-customer>Add customer ＋</button>
+          
+          <section class="panel">
+            <div class="toolbar customers-toolbar">
+              <div class="search-input">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="customer-search" placeholder="Search name, account number or phone" />
+              </div>
+              <select id="customer-status">
+                <option value="">All active records</option>
+                <option value="active">Active</option>
+                <option value="matured">Matured</option>
+                <option value="closed">Closed</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>CUSTOMER</th>
+                    <th>ACC. NO.</th>
+                    <th>MONTHLY RD</th>
+                    <th class="right">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="customers-table"></tbody>
+              </table>
+            </div>
+            <div id="customer-pagination" class="pagination"></div>
+          </section>
         </section>
 
+        <!-- PENDING COLLECTIONS VIEW -->
         <section id="view-pending" class="view">
-          <div class="page-actions"><div><h2>Pending collections</h2><p>Customers with an unpaid or partly paid installment for the selected month.</p></div><div class="inline-controls"><input id="pending-month" type="month" /><button id="refresh-pending" class="button secondary">Refresh</button></div></div>
-          <section class="panel"><div class="toolbar"><label class="search-input"><span>⌕</span><input id="pending-search" placeholder="Search pending customers" /></label><span id="pending-summary" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid</th><th>Remaining</th><th>Status</th><th class="right">Action</th></tr></thead><tbody id="pending-table"></tbody></table></div></section>
+          <div class="section-title-wrap">
+            <p class="subtitle">Customers with an unpaid or partly paid installment for the selected month.</p>
+          </div>
+          
+          <div class="month-selector-card">
+            <div class="period-input-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input id="pending-month" type="month" />
+            </div>
+            <button id="refresh-pending" class="button secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="pending-search-bar">
+            <div class="search-input">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="pending-search" placeholder="Search pending customers" />
+            </div>
+          </div>
+
+          <p id="pending-summary" class="pending-counter-label"></p>
+
+          <section class="panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>CUSTOMER</th>
+                    <th>ACC. NO.</th>
+                    <th>PHONE</th>
+                    <th class="right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="pending-table"></tbody>
+              </table>
+            </div>
+          </section>
         </section>
 
+        <!-- REPORTS VIEW -->
         <section id="view-reports" class="view">
-          <div class="page-actions"><div><h2>Reports</h2><p>Review accurate collection records and export a shareable copy.</p></div></div>
-          <section class="panel"><div class="report-controls"><label>Report<select id="report-type"><option value="monthly">Monthly collection</option><option value="customers">Customer-wise summary</option><option value="pending">Pending collection</option></select></label><label id="report-period-field">Period<input id="report-month" type="month" /></label><button id="generate-report" class="button primary">Generate report</button><div class="export-buttons"><button class="button secondary" data-export="pdf">Export PDF</button></div></div><div id="report-summary" class="report-summary"></div><div class="table-wrap"><table id="report-table"></table></div></section>
+          <div class="section-title-wrap">
+            <p class="subtitle">Review accurate collection records and export a shareable copy.</p>
+          </div>
+
+          <section class="panel report-panel">
+            <div class="report-controls-form">
+              <label>Report
+                <select id="report-type">
+                  <option value="monthly">Monthly collection</option>
+                  <option value="customers">Customer-wise summary</option>
+                  <option value="pending">Pending collection</option>
+                </select>
+              </label>
+              <label id="report-period-field">Period
+                <input id="report-month" type="month" />
+              </label>
+              <button id="generate-report" class="button primary wide">Generate report</button>
+              <div class="export-buttons">
+                <button class="button secondary wide" data-export="pdf">Export PDF</button>
+              </div>
+            <div class="report-search-bar">
+              <div class="search-input">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="report-search" placeholder="Search report by name, account no, phone, or status..." />
+              </div>
+            </div>
+            
+            <div id="report-summary" class="report-summary-cards"></div>
+
+            <div class="table-wrap">
+              <table id="report-table"></table>
+            </div>
+          </section>
         </section>
 
+        <!-- BACKUPS VIEW -->
         <section id="view-backups" class="view">
-          <div class="page-actions"><div><h2>Automatic backup & restore</h2><p>Private backup copies are saved inside your RD Agent application when you are online.</p></div><button id="create-internal-backup" class="button primary">Back up now</button></div>
-          <div class="backup-grid"><section class="panel backup-card"><div class="backup-icon">☁</div><h3>Automatic internal backup</h3><p id="backup-network-status" class="backup-status">Checking connection…</p><p>When the application detects an internet connection, it safely saves a new copy only if your records changed. Nothing is downloaded to your device.</p></section><section class="panel backup-card"><div class="backup-icon">↻</div><h3>Restore safely</h3><p>Choose a saved copy below. Restore is merge-only: existing records are never overwritten or deleted, and duplicate accounts or installments are skipped.</p><p class="muted">Each backup stays private to your agent account.</p></section></div><section class="panel internal-backup-panel"><div class="panel-header"><div><h3>Saved internal backups</h3><p>Restore points stored inside this application.</p></div><span id="backup-summary" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>Saved on</th><th>Type</th><th>Customers</th><th>Installments</th><th>Receipts</th><th class="right">Action</th></tr></thead><tbody id="internal-backups-table"></tbody></table></div></section><section class="notice-panel"><strong>Financial data protection</strong><p>Automatic snapshots are agent-isolated and audit logged. They remain inside this application's database, so keep the application database and server storage protected. Customer accounts and paid receipts are never deleted by restore.</p></section>
+          <div class="section-title-wrap">
+            <p class="subtitle">Private backup copies are saved inside your RD Agent app when you are online.</p>
+          </div>
+
+          <button id="create-internal-backup" class="button primary wide btn-backup-now">Back up now</button>
+
+          <div class="backup-feature-cards">
+            <div class="feature-card">
+              <div class="card-icon-wrap teal">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+              </div>
+              <div class="card-content">
+                <h3>Automatic internal backup</h3>
+                <p id="backup-network-status" class="backup-status online">Online — automatic backups are enabled.</p>
+                <p class="card-desc">The app detects changes and safely saves a new copy. Nothing is downloaded to your device.</p>
+              </div>
+            </div>
+
+            <div class="feature-card">
+              <div class="card-icon-wrap blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              </div>
+              <div class="card-content">
+                <h3>Restore safely</h3>
+                <p class="card-desc">Choose a saved copy below. Restore is merge-only: existing records are never overwritten or deleted.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-subheading">
+            <h3>Saved internal backups</h3>
+            <p>Restore points stored inside this application.</p>
+          </div>
+
+          <section class="panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>SAVED ON</th>
+                    <th>TYPE</th>
+                    <th>CUSTOMERS</th>
+                    <th>INSTALLMENTS</th>
+                    <th class="right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="internal-backups-table"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="financial-protection-panel">
+            <strong>Financial data protection</strong>
+            <p>Automatic snapshots are agent-isolated and audit logged. They remain inside this application's database, so your customer accounts and paid receipts are never removed by restore.</p>
+          </div>
         </section>
+
+        <!-- MOBILE BOTTOM NAVIGATION BAR -->
+        <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Bottom Navigation">
+          <button class="bottom-nav-item active" data-view="dashboard">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="bottom-nav-item" data-view="customers">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Customers</span>
+          </button>
+          <button class="bottom-nav-item" data-view="collections">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>Collection</span>
+          </button>
+          <button class="bottom-nav-item" data-view="reports">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Reports</span>
+          </button>
+          <button class="bottom-nav-item" data-view="pending">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Pending</span>
+          </button>
+        </nav>
       </main>
     </div>
 
     <div id="modal-root"></div>
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
-    <script src="/assets/app.js?v=20260815-redesign"></script>
+    <script src="/assets/app.js?v=20260815-report-search"></script>
   </body>
 </html>

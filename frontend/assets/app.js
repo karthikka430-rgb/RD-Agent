@@ -194,11 +194,43 @@ function showApp(agent, csrf) {
   setView('dashboard');
   maybeAutomaticBackup();
 }
-function setView(view) {
+function openSidebar() {
+  $('#sidebar')?.classList.add('open');
+  $('#sidebar-overlay')?.classList.add('active');
+}
+function closeSidebar() {
+  $('#sidebar')?.classList.remove('open');
+  $('#sidebar-overlay')?.classList.remove('active');
+}
+function toggleSidebar() {
+  const sidebar = $('#sidebar');
+  if (sidebar?.classList.contains('open')) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+}
+function handleBackAction() {
+  if ($('#modal-root')?.innerHTML.trim() !== '') {
+    closeModal();
+    return true;
+  }
+  const sidebar = $('#sidebar');
+  if (sidebar && sidebar.classList.contains('open')) {
+    closeSidebar();
+    return true;
+  }
+  if (state.view && state.view !== 'dashboard') {
+    setView('dashboard', false);
+    return true;
+  }
+  return false;
+}
+function setView(view, pushHistory = true) {
   state.view = view;
   $$('.view').forEach(element => element.classList.toggle('active', element.id === `view-${view}`));
-  $$('.nav-item[data-view]').forEach(element => element.classList.toggle('active', element.dataset.view === view));
-  $('#sidebar').classList.remove('open');
+  $$('[data-view]').forEach(element => element.classList.toggle('active', element.dataset.view === view));
+  closeSidebar();
   const info = {
     dashboard: ['OVERVIEW', 'Dashboard'],
     collections: ['MONTHLY COLLECTIONS', 'Collection register'],
@@ -207,9 +239,14 @@ function setView(view) {
     reports: ['ANALYTICS', 'Reports'],
     backups: ['DATA SAFETY', 'Backup & restore'],
   }[view];
-  $('#page-kicker').textContent = info[0];
-  $('#page-title').textContent = info[1];
-  ({ dashboard: loadDashboard, collections: loadCollections, customers: loadCustomers, pending: loadPending, reports: loadReport, backups: loadBackups }[view])();
+  if (info) {
+    $('#page-kicker').textContent = info[0];
+    $('#page-title').textContent = info[1];
+  }
+  if (pushHistory && view !== 'dashboard') {
+    history.pushState({ view }, '');
+  }
+  ({ dashboard: loadDashboard, collections: loadCollections, customers: loadCustomers, pending: loadPending, reports: loadReport, backups: loadBackups }[view])?.();
 }
 
 async function loadDashboard() {
@@ -217,16 +254,16 @@ async function loadDashboard() {
     const result = await api('/api/dashboard/');
     $('#period-label').textContent = `Collection status for ${period(result.period.month, result.period.year)}`;
     const metrics = [
-      ['Total customers', result.metrics.total_customers, 'Active accounts due this month', 'C'],
-      ['Paid customers', result.metrics.paid_customers, 'Installments completed', 'OK'],
-      ['Partly paid', result.metrics.partial_customers, 'Balance still pending', 'P'],
-      ['Collected this month', money(result.metrics.collection), period(result.period.month, result.period.year), 'Rs'],
-      ['Pending collections', result.metrics.pending_count, 'Follow-up required', 'D'],
+      ['Total customers', result.metrics.total_customers, 'Active accounts', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`, 'green'],
+      ['Paid customers', result.metrics.paid_customers, 'Installments completed', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`, 'green'],
+      ['Partly paid', result.metrics.partial_customers, 'Balance still pending', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`, 'blue'],
+      ['Pending collections', result.metrics.pending_count, 'Follow-up required', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`, 'orange'],
+      ['Total collection amount', money(result.metrics.collection), 'Amount received so far', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'teal'],
     ];
-    $('#metric-grid').innerHTML = metrics.map(([label, value, note, icon]) => `<article class="metric"><span class="metric-icon">${icon}</span><div class="metric-label">${label}</div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></article>`).join('');
+    $('#metric-grid').innerHTML = metrics.map(([label, value, note, icon, color]) => `<article class="metric"><div class="metric-header"><span class="metric-icon-badge ${color}">${icon}</span><div class="metric-label">${label}</div></div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></article>`).join('');
     $('#recent-table').innerHTML = result.recent_transactions.length
-      ? result.recent_transactions.map(item => `<tr><td><strong>${escapeHtml(item.customer_name)}</strong><small>${escapeHtml(item.account_number)}</small></td><td>${period(item.month, item.year)}</td><td><code>${escapeHtml(item.receipt_number)}</code><small>${formatCalendarDate(item.payment_date)}</small></td><td><strong>${money(item.amount)}</strong></td><td>${statusTag(item.status || (item.is_void ? 'Voided' : 'Recorded'))}</td></tr>`).join('')
-      : emptyRow(5, 'No payments have been recorded yet.');
+      ? result.recent_transactions.map(item => `<tr><td><div style="display:flex;align-items:center;gap:0.5rem;"><div class="avatar-sm"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><strong>${escapeHtml(item.customer_name)}</strong><small>${escapeHtml(item.account_number)}</small></div></div></td><td>${formatCalendarDate(item.payment_date)}</td><td class="right"><strong class="amount-green">${money(item.amount)}</strong></td></tr>`).join('')
+      : emptyRow(3, 'No payments have been recorded yet.');
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -247,23 +284,22 @@ async function loadCollections() {
     const { month, year } = selectedCollectionPeriod();
     const result = await api(`/api/collections/?month=${month}&year=${year}`);
     state.collectionRows = result.collections;
-    $('#collection-heading').textContent = `Collection cycle · ${period(month, year)}`;
     const metrics = [
-      ['Total customers', result.summary.total_customers, 'Active accounts due this month', 'C'],
-      ['Paid customers', result.summary.paid_customers, 'Installments completed', 'OK'],
-      ['Partly paid', result.summary.partial_customers, 'Balance still pending', 'P'],
-      ['Pending customers', result.summary.pending_customers, 'No amount collected', 'D'],
-      ['Total collection amount', money(result.summary.total_collection_amount), 'Amount received so far', 'Rs'],
+      ['Total customers', result.summary.total_customers, 'Active accounts', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`, 'green'],
+      ['Paid customers', result.summary.paid_customers, 'Installments completed', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`, 'green'],
+      ['Partly paid', result.summary.partial_customers, 'Balance still pending', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`, 'blue'],
+      ['Pending customers', result.summary.pending_customers, 'No amount collected', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`, 'orange'],
+      ['Total collection amount', money(result.summary.total_collection_amount), 'Amount received so far', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'teal'],
     ];
-    $('#collection-metrics').innerHTML = metrics.map(([label, value, note, icon]) => `<article class="metric"><span class="metric-icon">${icon}</span><div class="metric-label">${label}</div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></article>`).join('');
+    $('#collection-metrics').innerHTML = metrics.map(([label, value, note, icon, color]) => `<article class="metric"><div class="metric-header"><span class="metric-icon-badge ${color}">${icon}</span><div class="metric-label">${label}</div></div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></article>`).join('');
     $('#collections-table').innerHTML = result.collections.length
       ? result.collections.map(item => {
         const customer = item.customer;
         const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
         const editCell = item.payment ? `<button class="danger-action" data-collection-off="${customer.id}">OFF</button>` : '<span class="muted">—</span>';
-        return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong></td><td>${escapeHtml(customer.account_number)}</td><td>${escapeHtml(customer.phone)}</td><td>${money(customer.monthly_rd_amount)}</td><td class="balance-cell"><strong>${money(item.paid_amount)}</strong><small>Remaining ${money(item.remaining_amount)} of ${money(customer.monthly_rd_amount)}</small></td><td>${receiptMarkup(item.receipts)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
+        return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
       }).join('')
-      : emptyRow(9, 'No active RD accounts have a term covering this collection month.');
+      : emptyRow(6, 'No active RD accounts have a term covering this collection month.');
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -379,14 +415,29 @@ function reportQuery(format) {
   if (format) params.set('format', format);
   return params;
 }
+function renderReportTable(searchTerm = '') {
+  if (!state.report) return;
+  const term = searchTerm.trim().toLowerCase();
+  const filteredRows = term
+    ? state.report.rows.filter(row =>
+        state.report.columns.some(col => String(row[col] ?? '').toLowerCase().includes(term))
+      )
+    : state.report.rows;
+
+  const thead = `<thead><tr>${state.report.columns.map(column => `<th>${escapeHtml(column.replaceAll('_', ' '))}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${filteredRows.length ? filteredRows.map(row => `<tr>${state.report.columns.map(column => `<td>${escapeHtml(row[column] ?? '')}</td>`).join('')}</tr>`).join('') : emptyRow(state.report.columns.length, term ? 'No report records match your search.' : 'There are no records for this report.')}</tbody>`;
+  $('#report-table').innerHTML = thead + tbody;
+}
+
 async function loadReport() {
   try {
     if (!$('#report-month').value) $('#report-month').value = currentMonth;
     const result = await api(`/api/reports/?${reportQuery()}`);
     state.report = result;
     $('#report-period-field').classList.toggle('hidden', $('#report-type').value === 'customers');
-    $('#report-summary').innerHTML = Object.entries(result.summary).map(([key, value]) => `<span>${escapeHtml(key.replaceAll('_', ' '))}: <strong>${key.includes('collection') || key.includes('collected') ? money(value) : escapeHtml(value)}</strong></span>`).join('');
-    $('#report-table').innerHTML = `<thead><tr>${result.columns.map(column => `<th>${escapeHtml(column.replaceAll('_', ' '))}</th>`).join('')}</tr></thead><tbody>${result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column => `<td>${escapeHtml(row[column] ?? '')}</td>`).join('')}</tr>`).join('') : emptyRow(result.columns.length, 'There are no records for this report.')}</tbody>`;
+    $('#report-summary').innerHTML = Object.entries(result.summary).map(([key, value]) => `<div class="report-stat-item"><span>${escapeHtml(key.replaceAll('_', ' '))}</span><strong>${key.includes('collection') || key.includes('collected') ? money(value) : escapeHtml(value)}</strong></div>`).join('');
+    const searchVal = $('#report-search')?.value || '';
+    renderReportTable(searchVal);
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -394,6 +445,7 @@ async function loadReport() {
 
 function openModal(title, subtitle, body, footer = '') {
   $('#modal-root').innerHTML = `<div class="modal-overlay" role="dialog" aria-modal="true"><section class="modal"><header class="modal-header"><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(subtitle)}</p></div><button class="modal-close" data-close-modal aria-label="Close">x</button></header><div class="modal-body">${body}</div>${footer ? `<footer class="modal-footer">${footer}</footer>` : ''}</section></div>`;
+  history.pushState({ modal: true }, '');
 }
 function closeModal() {
   $('#modal-root').innerHTML = '';
@@ -410,7 +462,7 @@ function openAgentProfileEdit() {
 }
 function customerForm(customer = {}) {
   const value = (name, fallback = '') => escapeHtml(customer[name] ?? fallback);
-  return `<form id="customer-form"><div class="form-grid"><label class="full">Customer name<input name="customer_name" required maxlength="160" value="${value('customer_name')}" /></label><label>Account number<input name="account_number" required maxlength="64" value="${value('account_number')}" /></label><label>Phone<input name="phone" required maxlength="30" value="${value('phone')}" /></label><label>Monthly RD amount<input name="monthly_rd_amount" type="number" min="0.01" max="9999999999.99" step="0.01" required value="${value('monthly_rd_amount')}" /></label><label>Status<select name="status"><option value="active" ${customer.status === 'active' || !customer.status ? 'selected' : ''}>Active</option><option value="matured" ${customer.status === 'matured' ? 'selected' : ''}>Matured</option><option value="closed" ${customer.status === 'closed' ? 'selected' : ''}>Closed</option></select></label><label>Start date<input name="start_date" type="date" required value="${value('start_date')}" /></label><label>Maturity date<input name="maturity_date" type="date" required value="${value('maturity_date')}" /></label></div><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">${customer.id ? 'Save changes' : 'Create customer'}</button></footer></form>`;
+  return `<form id="customer-form"><div class="form-grid"><label class="full">Customer name<input name="customer_name" required maxlength="160" placeholder="Enter full name" value="${value('customer_name')}" /></label><label>Account number<input name="account_number" required maxlength="64" placeholder="Enter account number" value="${value('account_number')}" /></label><label>Phone<input name="phone" required maxlength="30" placeholder="Enter phone number" value="${value('phone')}" /></label><label>Monthly RD amount<input name="monthly_rd_amount" type="number" min="0.01" max="9999999999.99" step="0.01" required placeholder="Enter monthly RD amount" value="${value('monthly_rd_amount')}" /></label><label>Status<select name="status"><option value="active" ${customer.status === 'active' || !customer.status ? 'selected' : ''}>Active</option><option value="matured" ${customer.status === 'matured' ? 'selected' : ''}>Matured</option><option value="closed" ${customer.status === 'closed' ? 'selected' : ''}>Closed</option></select></label><label>Start date<input name="start_date" type="text" placeholder="YYYY-MM-DD or DD/MM/YYYY" required value="${value('start_date')}" /></label><label>Maturity date<input name="maturity_date" type="text" placeholder="YYYY-MM-DD or DD/MM/YYYY" required value="${value('maturity_date')}" /></label></div><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">${customer.id ? 'Save changes' : 'Create customer'}</button></footer></form>`;
 }
 function openCustomerModal(customer) {
   openModal(customer ? 'Edit customer' : 'Add customer', customer ? 'Changes are permanently retained in the audit log.' : 'Create a new RD customer account.', customerForm(customer));
@@ -432,11 +484,27 @@ function openCollectionOffModal(customerId) {
 function receiptForm(customer, summary, month, year) {
   const remaining = summary?.remaining_amount ?? customer.monthly_rd_amount;
   const paid = summary?.paid_amount ?? '0.00';
-  return `<form id="receipt-form" data-customer-id="${customer.id}" data-remaining="${escapeHtml(remaining)}"><div class="profile-summary receipt-summary"><div>Monthly RD<strong>${money(customer.monthly_rd_amount)}</strong></div><div>Collected so far<strong>${money(paid)}</strong></div><div>Amount remaining<strong>${money(remaining)}</strong></div></div><div class="form-grid"><label>Installment month<input name="period" type="month" required value="${year}-${String(month).padStart(2, '0')}" /></label><label>Amount received<input name="amount" type="number" min="0.01" max="${escapeHtml(remaining)}" step="0.01" required value="${escapeHtml(remaining)}" /></label><label class="full">Collection date<input name="payment_date" type="date" max="${todayIso}" required value="${todayIso}" /></label></div><p class="muted">A receipt is created for this amount. Recorded receipts cannot be changed or removed.</p><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Record amount and generate receipt</button></footer></form>`;
+  return `<form id="receipt-form" data-customer-id="${customer.id}" data-remaining="${escapeHtml(remaining)}">
+    <div class="receipt-summary-grid">
+      <div class="summary-stat"><span class="stat-label">Monthly RD</span><strong class="stat-value text-green">${money(customer.monthly_rd_amount)}</strong></div>
+      <div class="summary-stat"><span class="stat-label">Collected so far</span><strong class="stat-value">${money(paid)}</strong></div>
+      <div class="summary-stat"><span class="stat-label">Amount remaining</span><strong class="stat-value text-green">${money(remaining)}</strong></div>
+    </div>
+    <div class="form-grid">
+      <label class="full">Installment month<input name="period" type="month" required value="${year}-${String(month).padStart(2, '0')}" /></label>
+      <label class="full">Amount received<input name="amount" type="number" min="0.01" max="${escapeHtml(remaining)}" step="0.01" required value="${escapeHtml(remaining)}" /></label>
+      <label class="full">Collection date<input name="payment_date" type="date" max="${todayIso}" required value="${todayIso}" /></label>
+    </div>
+    <p class="muted font-sm">A receipt is created for this amount. Recorded receipts cannot be changed or removed.</p>
+    <footer class="modal-footer">
+      <button class="button secondary" type="button" data-close-modal>Cancel</button>
+      <button class="button primary" type="submit">Record amount and generate receipt</button>
+    </footer>
+  </form>`;
 }
 function openReceiptModal(customer, summary, periodInfo) {
   const { month, year } = periodInfo;
-  openModal(`Record collection · ${customer.customer_name}`, `Account ${customer.account_number}. Enter the cash amount received for ${period(month, year)}.`, receiptForm(customer, summary, month, year));
+  openModal(`Record collection - ${customer.customer_name}`, `Account ${customer.account_number}. Enter the cash amount received for ${period(month, year)}.`, receiptForm(customer, summary, month, year));
 }
 function openCollectionReceiptModal(customerId) {
   const item = state.collectionRows.find(row => row.customer.id === customerId);
@@ -460,18 +528,102 @@ async function openPaymentModal(customerId) {
     toast(error.message, 'error');
   }
 }
+function calculatePendingMonths(customer, payments) {
+  if (!customer.start_date || !customer.maturity_date) return { count: 0, outstanding: '0.00' };
+  const [startYear, startMonth] = customer.start_date.split('-').map(Number);
+  const [matYear, matMonth] = customer.maturity_date.split('-').map(Number);
+  if (!startYear || !matYear) return { count: 0, outstanding: '0.00' };
+
+  const now = new Date();
+  const currentY = now.getFullYear();
+  const currentM = now.getMonth() + 1;
+
+  let currY = startYear;
+  let currM = startMonth;
+  let pendingCount = 0;
+  let outstanding = 0;
+  const monthly = Number(customer.monthly_rd_amount || 0);
+
+  while (currY < currentY || (currY === currentY && currM <= currentM)) {
+    if (currY > matYear || (currY === matYear && currM > matMonth)) break;
+    const payment = payments.find(p => p.year === currY && p.month === currM);
+    if (!payment) {
+      pendingCount++;
+      outstanding += monthly;
+    } else if (!payment.is_paid) {
+      pendingCount++;
+      outstanding += Number(payment.remaining_amount || 0);
+    }
+    currM++;
+    if (currM > 12) {
+      currM = 1;
+      currY++;
+    }
+  }
+  return { count: pendingCount, outstanding: outstanding.toFixed(2) };
+}
+
+function normalizeDateInput(val) {
+  if (!val || typeof val !== 'string') return val;
+  const str = val.trim();
+  const parts = str.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    if (parts[2].length === 4 && parts[0].length <= 2) {
+      const d = parts[0].padStart(2, '0');
+      const m = parts[1].padStart(2, '0');
+      const y = parts[2];
+      return `${y}-${m}-${d}`;
+    }
+    if (parts[0].length === 4) {
+      const y = parts[0];
+      const m = parts[1].padStart(2, '0');
+      const d = parts[2].padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+  }
+  return str;
+}
+
 async function openCustomerProfile(customerId) {
   try {
     const result = await api(`/api/customers/${customerId}`);
     const customer = result.customer;
     state.profile = result;
-    const rows = result.payments.length
-      ? result.payments.map(payment => `<tr><td>${period(payment.month, payment.year)}</td><td>${money(customer.monthly_rd_amount)}</td><td><strong>${money(payment.paid_amount)}</strong><small>Remaining ${money(payment.remaining_amount)}</small></td><td>${receiptMarkup(payment.receipts || [])}</td><td>${statusTag(payment.is_void ? 'Voided' : payment.status)}</td></tr>`).join('')
-      : emptyRow(5, 'No payments recorded.');
-    openModal(customer.customer_name, `Account ${customer.account_number} · ${customer.status}`, `<div class="profile-summary"><div>Monthly RD<strong>${money(customer.monthly_rd_amount)}</strong></div><div>Start date<strong>${formatCalendarDate(customer.start_date)}</strong></div><div>Maturity date<strong>${formatCalendarDate(customer.maturity_date)}</strong></div></div><div class="panel-header"><div><h3>Payment history</h3><p>Each receipt and balance is retained permanently.</p></div><button class="button primary" data-customer-payment="${customer.id}">Record payment</button></div><div class="table-wrap"><table><thead><tr><th>Period</th><th>Monthly RD</th><th>Paid / remaining</th><th>Receipt history</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div><div class="panel-header"><div><h3>Change history</h3><p>Auditable customer, installment, and receipt events</p></div></div><div id="audit-content" class="muted">Loading audit history...</div>`);
-    const audit = await api(`/api/customers/${customerId}/audit`);
-    const auditNode = $('#audit-content');
-    if (auditNode) auditNode.innerHTML = audit.audit_logs.length ? `<ul class="audit-list">${audit.audit_logs.map(log => `<li><strong>${escapeHtml(log.action)}</strong> · ${escapeHtml(log.entity_type)} <small>${new Date(log.timestamp).toLocaleString('en-IN')}</small></li>`).join('')}</ul>` : 'No audit entries yet.';
+    const receipts = result.payments.flatMap(p => (p.receipts || []).map(r => ({ ...r, month: p.month, year: p.year })));
+    const totalPaid = result.payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
+    const pendingInfo = calculatePendingMonths(customer, result.payments);
+    const bodyHtml = `
+      <div class="customer-detail-cards">
+        <div class="detail-card">
+          <div class="detail-card-title">Account information</div>
+          <div class="detail-grid-2">
+            <div><div class="detail-item-label">Account number</div><div class="detail-item-value">${escapeHtml(customer.account_number)}</div></div>
+            <div><div class="detail-item-label">Monthly RD amount</div><div class="detail-item-value">${money(customer.monthly_rd_amount)} ${statusTag(customer.status)}</div></div>
+          </div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-title">RD term</div>
+          <div class="detail-grid-2">
+            <div><div class="detail-item-label">Start date</div><div class="detail-item-value">${formatCalendarDate(customer.start_date)}</div></div>
+            <div><div class="detail-item-label">Maturity date</div><div class="detail-item-value">${formatCalendarDate(customer.maturity_date)}</div></div>
+          </div>
+          <div style="margin-top:0.5rem;"><div class="detail-item-label">Remaining term</div><div class="detail-item-value" style="font-size:0.8125rem;">${escapeHtml(remainingDuration(customer.maturity_date))}</div></div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-title">Collection summary</div>
+          <div class="detail-grid-3">
+            <div><div class="detail-item-label">Total paid</div><div class="detail-item-value text-green">${money(totalPaid)}</div></div>
+            <div><div class="detail-item-label">Pending months</div><div class="detail-item-value" style="color: ${pendingInfo.count > 0 ? 'var(--amber)' : 'var(--green-text)'};">${pendingInfo.count} month${pendingInfo.count === 1 ? '' : 's'}</div></div>
+            <div><div class="detail-item-label">Outstanding</div><div class="detail-item-value" style="color: ${Number(pendingInfo.outstanding) > 0 ? 'var(--amber)' : 'inherit'};">${money(pendingInfo.outstanding)}</div></div>
+          </div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-title" style="display:flex;justify-content:space-between;"><span>Recent receipts</span><span class="text-button" style="font-size:0.75rem;">View all →</span></div>
+          ${receipts.length ? `<div style="display:grid;gap:0.4rem;">${receipts.slice(0, 3).map(r => `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;padding:0.3rem 0;border-bottom:1px solid var(--line);"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small style="display:block;color:var(--muted);">${escapeHtml(r.receipt_number)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`).join('')}</div>` : '<div class="muted font-sm">No receipts yet</div>'}
+        </div>
+      </div>
+    `;
+    openModal(customer.customer_name, `Account ${customer.account_number} · ${customer.status}`, bodyHtml, `<button class="button secondary" type="button" data-customer-edit="${customer.id}">Edit customer</button><button class="button primary" type="button" data-customer-payment="${customer.id}">Record collection</button>`);
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -479,8 +631,11 @@ async function openCustomerProfile(customerId) {
 
 async function submitCustomer(form) {
   const customerId = form.dataset.customerId;
+  const rawData = Object.fromEntries(new FormData(form));
+  if (rawData.start_date) rawData.start_date = normalizeDateInput(rawData.start_date);
+  if (rawData.maturity_date) rawData.maturity_date = normalizeDateInput(rawData.maturity_date);
   try {
-    await api(customerId ? `/api/customers/${customerId}` : '/api/customers/', { method: customerId ? 'PUT' : 'POST', body: Object.fromEntries(new FormData(form)) });
+    await api(customerId ? `/api/customers/${customerId}` : '/api/customers/', { method: customerId ? 'PUT' : 'POST', body: rawData });
     toast(customerId ? 'Customer updated and audit logged.' : 'Customer account created.');
     closeModal();
     await loadCustomers();
@@ -609,6 +764,19 @@ document.addEventListener('submit', async event => {
 });
 
 document.addEventListener('click', async event => {
+  if (event.target.classList.contains('modal-overlay')) {
+    closeModal();
+    return;
+  }
+  if (event.target.id === 'sidebar-overlay') {
+    closeSidebar();
+    return;
+  }
+  if ($('#sidebar')?.classList.contains('open') && !event.target.closest('#sidebar') && !event.target.closest('#menu-button')) {
+    closeSidebar();
+    return;
+  }
+
   if (event.target.closest('.agent-menu')) return openAgentProfile();
   const passwordToggle = event.target.closest('[data-password-toggle]');
   if (passwordToggle) {
@@ -631,7 +799,7 @@ document.addEventListener('click', async event => {
   if (button.dataset.authMode) return showAuth(button.dataset.authMode);
   if (button.dataset.view) return setView(button.dataset.view);
   if (button.dataset.nav) return setView(button.dataset.nav);
-  if (button.id === 'menu-button') return $('#sidebar').classList.toggle('open');
+  if (button.id === 'menu-button') return toggleSidebar();
   if (button.dataset.closeModal !== undefined) return closeModal();
   if (button.dataset.editAgentProfile !== undefined) return openAgentProfileEdit();
   if (button.dataset.deleteAgentAccount !== undefined) return openDeleteAccountModal();
@@ -721,23 +889,64 @@ document.addEventListener('change', event => {
   checkbox.checked = false;
   openCollectionReceiptModal(Number(checkbox.dataset.collectionToggle));
 });
+
 document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    handleBackAction();
+  }
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.agent-menu')) {
     event.preventDefault();
     openAgentProfile();
   }
 });
+
+window.addEventListener('popstate', () => {
+  handleBackAction();
+});
+
+if (window.Capacitor?.Plugins?.App) {
+  window.Capacitor.Plugins.App.addListener('backButton', () => {
+    const handled = handleBackAction();
+    if (!handled) {
+      window.Capacitor.Plugins.App.exitApp();
+    }
+  });
+}
+
 let customerSearchTimer;
 $('#customer-search').addEventListener('input', () => {
   clearTimeout(customerSearchTimer);
   customerSearchTimer = setTimeout(() => { state.customerPage = 1; loadCustomers(); }, 250);
 });
 $('#customer-status').addEventListener('change', () => { state.customerPage = 1; loadCustomers(); });
+document.addEventListener('input', event => {
+  if (event.target.name === 'start_date' && event.target.closest('#customer-form')) {
+    const form = event.target.closest('#customer-form');
+    const matInput = form?.querySelector('input[name="maturity_date"]');
+    if (matInput && (!matInput.value || matInput.dataset.autoFilled)) {
+      const normalized = normalizeDateInput(event.target.value);
+      if (normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+        const [y, m, d] = normalized.split('-').map(Number);
+        matInput.value = `${y + 5}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        matInput.dataset.autoFilled = 'true';
+      }
+    }
+  }
+});
+
 let pendingSearchTimer;
 $('#pending-search').addEventListener('input', () => {
   clearTimeout(pendingSearchTimer);
   pendingSearchTimer = setTimeout(loadPending, 250);
 });
+let reportSearchTimer;
+$('#report-search')?.addEventListener('input', () => {
+  clearTimeout(reportSearchTimer);
+  reportSearchTimer = setTimeout(() => {
+    renderReportTable($('#report-search')?.value || '');
+  }, 150);
+});
+
 $('#report-type').addEventListener('change', loadReport);
 window.addEventListener('online', async () => {
   setBackupNetworkStatus();
@@ -747,13 +956,60 @@ window.addEventListener('online', async () => {
     if (state.view === 'backups') loadBackups();
   }
 });
-window.addEventListener('offline', setBackupNetworkStatus);
+const overlay = $('#sidebar-overlay');
+if (overlay) {
+  overlay.addEventListener('click', (e) => { e.preventDefault(); closeSidebar(); });
+  overlay.addEventListener('touchstart', (e) => { e.preventDefault(); closeSidebar(); }, { passive: false });
+}
+
+function hideLoadingScreen() {
+  const screen = $('#loading-screen');
+  if (screen && !screen.classList.contains('fade-out')) {
+    screen.classList.add('fade-out');
+    setTimeout(() => {
+      screen.style.display = 'none';
+    }, 450);
+  }
+}
+
+async function checkBackendReadiness(maxRetries = 60, intervalMs = 1500) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' },
+      });
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await response.json();
+        if (response.ok) {
+          return { ready: true, authenticated: true, agent: data.agent, csrf: data.csrf_token };
+        }
+        if (response.status === 401) {
+          const token = await tokenStorage.get();
+          if (token) {
+            const restored = await attemptSessionRefresh();
+            if (restored) {
+              return { ready: true, authenticated: true, agent: state.agent, csrf: state.csrf };
+            }
+          }
+          return { ready: true, authenticated: false };
+        }
+      }
+    } catch {
+      // Backend is starting up / connection pending
+    }
+    await new Promise(resolve => setTimeout(resolve, intervalMs));
+  }
+  return { ready: false, authenticated: false };
+}
 
 (async function boot() {
-  try {
-    const result = await api('/api/auth/me');
-    showApp(result.agent, result.csrf_token);
-  } catch {
+  const result = await checkBackendReadiness();
+  if (result.authenticated && result.agent) {
+    showApp(result.agent, result.csrf);
+  } else {
     showAuth();
   }
+  hideLoadingScreen();
 })();

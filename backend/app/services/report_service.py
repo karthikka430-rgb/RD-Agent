@@ -12,7 +12,7 @@ def monthly_report(agent_id, month, year):
     payments = (
         Payment.query.join(Customer)
         .filter(Customer.agent_id == agent_id, Payment.month == month, Payment.year == year)
-        .order_by(Customer.customer_name.asc())
+        .order_by(Customer.start_date.asc(), Customer.created_at.asc(), Customer.id.asc())
         .all()
     )
     rows = []
@@ -62,7 +62,7 @@ def monthly_report(agent_id, month, year):
 
 
 def customer_report(agent_id):
-    customers = Customer.query.filter_by(agent_id=agent_id).order_by(Customer.customer_name.asc()).all()
+    customers = Customer.query.filter_by(agent_id=agent_id).order_by(Customer.start_date.asc(), Customer.created_at.asc(), Customer.id.asc()).all()
     rows = []
     for customer in customers:
         active_payments = customer.payments.filter(Payment.voided_at.is_(None)).all()
@@ -107,7 +107,7 @@ def pending_report(agent_id, month, year):
         Payment.voided_at.is_(None),
         Payment.amount >= Customer.monthly_rd_amount,
     ).exists()
-    customers = active_collection_customers_query(agent_id, month, year).filter(~fully_paid_exists).order_by(Customer.customer_name.asc()).all()
+    customers = active_collection_customers_query(agent_id, month, year).filter(~fully_paid_exists).order_by(Customer.start_date.asc(), Customer.created_at.asc(), Customer.id.asc()).all()
     customer_ids = [customer.id for customer in customers]
     payments = (
         Payment.query.filter(Payment.customer_id.in_(customer_ids), Payment.month == month, Payment.year == year).all()
