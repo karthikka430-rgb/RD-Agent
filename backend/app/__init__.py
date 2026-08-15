@@ -39,6 +39,9 @@ def create_app(config_object=Config):
     @app.after_request
     def make_session_permanent(response):
         session.permanent = True
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
         return response
 
     db.init_app(app)
