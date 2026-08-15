@@ -124,14 +124,38 @@ async function api(url, options = {}) {
   }
   if (state.csrf && !['GET', 'HEAD'].includes((config.method || 'GET').toUpperCase())) config.headers['X-CSRF-Token'] = state.csrf;
   const isAuthCall = url.startsWith('/api/auth/login') || url.startsWith('/api/auth/register');
-  let response = await fetch(url, config);
-  if (response.status === 401 && !isAuthCall && url !== '/api/auth/refresh') {
-    const restored = await attemptSessionRefresh();
-    if (restored) {
-      if (state.csrf && !['GET', 'HEAD'].includes((config.method || 'GET').toUpperCase())) config.headers['X-CSRF-Token'] = state.csrf;
-      response = await fetch(url, config);
+  const isBackground = url.includes('/automatic');
+  
+  let activeBtn = null;
+  if (!isBackground) {
+    activeBtn = document.activeElement && document.activeElement.tagName === 'BUTTON' ? document.activeElement : null;
+    if (activeBtn) {
+      activeBtn.disabled = true;
+      activeBtn.classList.add('loading-state');
+    }
+    document.body.classList.add('is-loading');
+  }
+
+  let response;
+  try {
+    response = await fetch(url, config);
+    if (response.status === 401 && !isAuthCall && url !== '/api/auth/refresh') {
+      const restored = await attemptSessionRefresh();
+      if (restored) {
+        if (state.csrf && !['GET', 'HEAD'].includes((config.method || 'GET').toUpperCase())) config.headers['X-CSRF-Token'] = state.csrf;
+        response = await fetch(url, config);
+      }
+    }
+  } finally {
+    if (!isBackground) {
+      document.body.classList.remove('is-loading');
+      if (activeBtn) {
+        activeBtn.disabled = false;
+        activeBtn.classList.remove('loading-state');
+      }
     }
   }
+
   if (response.status === 204) return null;
   const contentType = response.headers.get('content-type') || '';
   const data = contentType.includes('application/json') ? await response.json() : null;
@@ -236,7 +260,7 @@ async function loadCollections() {
       ? result.collections.map(item => {
         const customer = item.customer;
         const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
-        const editCell = item.payment ? `<button data-collection-off="${customer.id}">OFF</button>` : '<span class="muted">—</span>';
+        const editCell = item.payment ? `<button class="danger-action" data-collection-off="${customer.id}">OFF</button>` : '<span class="muted">—</span>';
         return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong></td><td>${escapeHtml(customer.account_number)}</td><td>${escapeHtml(customer.phone)}</td><td>${money(customer.monthly_rd_amount)}</td><td class="balance-cell"><strong>${money(item.paid_amount)}</strong><small>Remaining ${money(item.remaining_amount)} of ${money(customer.monthly_rd_amount)}</small></td><td>${receiptMarkup(item.receipts)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
       }).join('')
       : emptyRow(9, 'No active RD accounts have a term covering this collection month.');
