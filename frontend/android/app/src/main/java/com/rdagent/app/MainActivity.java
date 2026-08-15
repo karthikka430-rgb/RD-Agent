@@ -8,6 +8,8 @@ import android.os.Environment;
 import android.webkit.CookieManager;
 import android.webkit.URLUtil;
 
+import androidx.activity.OnBackPressedCallback;
+
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -15,6 +17,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         // The WebView has no download support by default, so the report PDF
         // export would silently fail on Android. Forward any attachment download
         // (for example /api/reports/export?format=pdf) to the system Download
@@ -36,22 +39,29 @@ public class MainActivity extends BridgeActivity {
             } catch (Exception ignored) {
             }
         });
-    }
 
-    @Override
-    public void onBackPressed() {
-        if (getBridge() != null && getBridge().getWebView() != null) {
-            getBridge().getWebView().evaluateJavascript(
-                "(function() { return (window.handleAndroidBack && window.handleAndroidBack()) ? 'true' : 'false'; })()",
-                value -> {
-                    if ("\"false\"".equals(value) || "false".equals(value)) {
-                        runOnUiThread(this::finish);
-                    }
+        // Handle Android back gesture/button using the modern OnBackPressedCallback API
+        // (replaces deprecated onBackPressed() to fix API-33+ deprecation error).
+        // We ask the JS layer if it can handle the back action first. If the JS
+        // returns false (user is on the Dashboard with nothing open) we finish()
+        // the Activity ourselves to close the app cleanly.
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (getBridge() != null && getBridge().getWebView() != null) {
+                    getBridge().getWebView().evaluateJavascript(
+                        "(function(){ return (window.handleAndroidBack && window.handleAndroidBack()) ? 'true' : 'false'; })()",
+                        value -> {
+                            if ("\"false\"".equals(value) || "false".equals(value)) {
+                                runOnUiThread(MainActivity.this::finish);
+                            }
+                        }
+                    );
+                } else {
+                    finish();
                 }
-            );
-        } else {
-            super.onBackPressed();
-        }
+            }
+        });
     }
 
     @Override
