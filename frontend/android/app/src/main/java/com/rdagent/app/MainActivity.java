@@ -39,6 +39,18 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().evaluateJavascript(
+                "if (window.handleAndroidBack) { window.handleAndroidBack(); } else if (window.history.length > 1) { window.history.back(); }",
+                null
+            );
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
     public void onStop() {
         super.onStop();
         CookieManager.getInstance().flush();

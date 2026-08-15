@@ -573,10 +573,11 @@ input:focus, select:focus, textarea:focus {
 
 /* TOPBAR */
 .topbar {
-  height: 3.75rem;
+  min-height: calc(3.75rem + env(safe-area-inset-top, 0px));
+  height: auto;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  padding: 0 1.25rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.625rem) max(env(safe-area-inset-right, 0px), 1rem) 0.625rem max(env(safe-area-inset-left, 0px), 1rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -654,12 +655,14 @@ input:focus, select:focus, textarea:focus {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 3.75rem;
+  min-height: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+  height: auto;
   background: var(--surface);
   border-top: 1px solid var(--line);
   display: flex;
   justify-content: space-around;
   align-items: center;
+  padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom, 0px)) 0;
   z-index: 40;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
 }
@@ -699,7 +702,7 @@ input:focus, select:focus, textarea:focus {
    ========================================================================== */
 .main-content {
   min-width: 0;
-  padding-bottom: 4.5rem;
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 881px) {
@@ -1404,10 +1407,60 @@ td small {
   gap: 0.75rem;
 }
 
-.detail-grid-3 {
+.summary-tile-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.stat-tile {
+  background: #F8FAFC;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+}
+
+.stat-tile .detail-item-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.15rem;
+}
+
+.stat-tile .detail-item-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.receipts-scroll-list {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0.25rem;
+}
+
+.receipt-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.receipt-item-row:last-child {
+  border-bottom: none;
+}
+
+.receipt-item-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.6875rem;
 }
 
 .detail-item-label {

@@ -33,8 +33,20 @@ function calendarDate(value) {
   return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
 }
 function formatCalendarDate(value) {
-  const parsed = calendarDate(value);
-  return parsed ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(parsed) : '-';
+  if (!value) return '-';
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, y, m, d] = match;
+    return `${d}/${m}/${y}`;
+  }
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    const d = String(parsed.getDate()).padStart(2, '0');
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const y = parsed.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  return value;
 }
 function remainingDuration(maturityDate) {
   const target = calendarDate(maturityDate);
@@ -529,10 +541,10 @@ async function openPaymentModal(customerId) {
   }
 }
 function calculatePendingMonths(customer, payments) {
-  if (!customer.start_date || !customer.maturity_date) return { count: 0, outstanding: '0.00' };
+  if (!customer.start_date || !customer.maturity_date) return { count: 0, outstanding: '0.00', advance: '0.00', advanceMonths: 0, totalPaid: '0.00' };
   const [startYear, startMonth] = customer.start_date.split('-').map(Number);
   const [matYear, matMonth] = customer.maturity_date.split('-').map(Number);
-  if (!startYear || !matYear) return { count: 0, outstanding: '0.00' };
+  if (!startYear || !matYear) return { count: 0, outstanding: '0.00', advance: '0.00', advanceMonths: 0, totalPaid: '0.00' };
 
   const now = new Date();
   const currentY = now.getFullYear();
@@ -542,10 +554,12 @@ function calculatePendingMonths(customer, payments) {
   let currM = startMonth;
   let pendingCount = 0;
   let outstanding = 0;
+  let dueMonthsCount = 0;
   const monthly = Number(customer.monthly_rd_amount || 0);
 
   while (currY < currentY || (currY === currentY && currM <= currentM)) {
     if (currY > matYear || (currY === matYear && currM > matMonth)) break;
+    dueMonthsCount++;
     const payment = payments.find(p => p.year === currY && p.month === currM);
     if (!payment) {
       pendingCount++;
@@ -560,7 +574,23 @@ function calculatePendingMonths(customer, payments) {
       currY++;
     }
   }
-  return { count: pendingCount, outstanding: outstanding.toFixed(2) };
+
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
+  const expectedDueTotal = dueMonthsCount * monthly;
+  let advance = 0;
+  let advanceMonths = 0;
+  if (totalPaid > expectedDueTotal) {
+    advance = totalPaid - expectedDueTotal;
+    advanceMonths = monthly > 0 ? Math.floor(advance / monthly) : 0;
+  }
+
+  return {
+    count: pendingCount,
+    outstanding: outstanding.toFixed(2),
+    advance: advance.toFixed(2),
+    advanceMonths: advanceMonths,
+    totalPaid: totalPaid.toFixed(2),
+  };
 }
 
 function normalizeDateInput(val) {
@@ -584,13 +614,13 @@ function normalizeDateInput(val) {
   return str;
 }
 
-async function openCustomerProfile(customerId) {
+async function openCustomerProfile(customerId, showAllReceipts = false) {
   try {
     const result = await api(`/api/customers/${customerId}`);
     const customer = result.customer;
     state.profile = result;
+    state.profileShowAllReceipts = showAllReceipts;
     const receipts = result.payments.flatMap(p => (p.receipts || []).map(r => ({ ...r, month: p.month, year: p.year })));
-    const totalPaid = result.payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
     const pendingInfo = calculatePendingMonths(customer, result.payments);
     const bodyHtml = `
       <div class="customer-detail-cards">
@@ -611,15 +641,37 @@ async function openCustomerProfile(customerId) {
         </div>
         <div class="detail-card">
           <div class="detail-card-title">Collection summary</div>
-          <div class="detail-grid-3">
-            <div><div class="detail-item-label">Total paid</div><div class="detail-item-value text-green">${money(totalPaid)}</div></div>
-            <div><div class="detail-item-label">Pending months</div><div class="detail-item-value" style="color: ${pendingInfo.count > 0 ? 'var(--amber)' : 'var(--green-text)'};">${pendingInfo.count} month${pendingInfo.count === 1 ? '' : 's'}</div></div>
-            <div><div class="detail-item-label">Outstanding</div><div class="detail-item-value" style="color: ${Number(pendingInfo.outstanding) > 0 ? 'var(--amber)' : 'inherit'};">${money(pendingInfo.outstanding)}</div></div>
+          <div class="summary-tile-grid">
+            <div class="stat-tile">
+              <div class="detail-item-label">Total paid</div>
+              <div class="detail-item-value text-green">${money(pendingInfo.totalPaid)}</div>
+            </div>
+            <div class="stat-tile">
+              <div class="detail-item-label">Pending months</div>
+              <div class="detail-item-value ${pendingInfo.count > 0 ? 'text-amber' : 'text-green'}">
+                ${pendingInfo.count} month${pendingInfo.count === 1 ? '' : 's'}
+              </div>
+            </div>
+            <div class="stat-tile">
+              <div class="detail-item-label">Outstanding</div>
+              <div class="detail-item-value ${Number(pendingInfo.outstanding) > 0 ? 'text-amber' : ''}">
+                ${money(pendingInfo.outstanding)}
+              </div>
+            </div>
+            <div class="stat-tile">
+              <div class="detail-item-label">Advance paid</div>
+              <div class="detail-item-value ${Number(pendingInfo.advance) > 0 ? 'text-green' : ''}">
+                ${money(pendingInfo.advance)} ${pendingInfo.advanceMonths > 0 ? `<small style="font-size:0.7rem;color:var(--green-text);font-weight:700;">(${pendingInfo.advanceMonths}m)</small>` : ''}
+              </div>
+            </div>
           </div>
         </div>
         <div class="detail-card">
-          <div class="detail-card-title" style="display:flex;justify-content:space-between;"><span>Recent receipts</span><span class="text-button" style="font-size:0.75rem;">View all →</span></div>
-          ${receipts.length ? `<div style="display:grid;gap:0.4rem;">${receipts.slice(0, 3).map(r => `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;padding:0.3rem 0;border-bottom:1px solid var(--line);"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small style="display:block;color:var(--muted);">${escapeHtml(r.receipt_number)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`).join('')}</div>` : '<div class="muted font-sm">No receipts yet</div>'}
+          <div class="detail-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>${showAllReceipts ? `All receipts (${receipts.length})` : 'Recent receipts'}</span>
+            ${receipts.length > 3 ? `<button type="button" class="text-button" data-toggle-receipts="${customer.id}">${showAllReceipts ? 'Show recent' : 'View all →'}</button>` : ''}
+          </div>
+          ${receipts.length ? `<div class="receipts-scroll-list">${(showAllReceipts ? receipts : receipts.slice(0, 3)).map(r => `<div class="receipt-item-row"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small>${escapeHtml(r.receipt_number)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`).join('')}</div>` : '<div class="muted font-sm">No receipts yet</div>'}
         </div>
       </div>
     `;
@@ -872,6 +924,10 @@ document.addEventListener('click', async event => {
     }
     return;
   }
+  if (button.dataset.toggleReceipts) {
+    const custId = Number(button.dataset.toggleReceipts);
+    return openCustomerProfile(custId, !state.profileShowAllReceipts);
+  }
   if (button.id === 'logout-button') {
     try {
       const token = await tokenStorage.get();
@@ -900,16 +956,23 @@ document.addEventListener('keydown', event => {
   }
 });
 
+window.handleAndroidBack = function() {
+  const handled = handleBackAction();
+  if (!handled) {
+    if (window.Capacitor?.Plugins?.App) {
+      window.Capacitor.Plugins.App.exitApp();
+    }
+  }
+  return handled;
+};
+
 window.addEventListener('popstate', () => {
   handleBackAction();
 });
 
 if (window.Capacitor?.Plugins?.App) {
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    const handled = handleBackAction();
-    if (!handled) {
-      window.Capacitor.Plugins.App.exitApp();
-    }
+    window.handleAndroidBack();
   });
 }
 
