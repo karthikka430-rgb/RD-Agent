@@ -2,7 +2,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, g, jsonify, request, session
 
 from ..extensions import db
-from ..models import Agent, RefreshToken, private_email_placeholder, utcnow
+from ..models import Agent, AuditLog, BackupSnapshot, Customer, RefreshToken, private_email_placeholder, utcnow
 from ..services.audit_service import log_change
 from ..utils import (
     ValidationError,
@@ -24,6 +24,26 @@ def _issue_refresh_token(agent_id):
     db.session.add(RefreshToken(agent_id=agent_id, token_hash=hash_refresh_token(token)))
     db.session.commit()
     return token
+
+
+def _delete_agent_records(agent):
+    """Permanently remove an agent and every record that belongs to them.
+
+    Deletion order respects the foreign keys between financial tables so no
+    orphaned rows can remain. Audit rows are removed too because they reference
+    the agent and its deleted customers.
+    """
+    agent_id = agent.id
+    for customer in Customer.query.filter_by(agent_id=agent_id).all():
+        for payment in list(customer.payments):
+            for receipt in list(payment.receipts):
+                db.session.delete(receipt)
+            db.session.delete(payment)
+        db.session.delete(customer)
+    BackupSnapshot.query.filter_by(agent_id=agent_id).delete(synchronize_session=False)
+    RefreshToken.query.filter_by(agent_id=agent_id).delete(synchronize_session=False)
+    AuditLog.query.filter_by(agent_id=agent_id).delete(synchronize_session=False)
+    db.session.delete(agent)
 
 
 @auth_bp.post("/register")
@@ -161,3 +181,45 @@ def update_profile():
         db.session.rollback()
         return api_error("An account with that phone number or email already exists.", 409)
     return jsonify({"agent": g.agent.public_dict(), "csrf_token": ensure_csrf_token()})
+
+
+@auth_bp.post("/account/verify")
+@require_auth
+@require_csrf
+def verify_delete_account():
+    """Step 1 of account deletion: prove ownership with the existing password.
+
+    The verified flag is stored server-side in the session, so account deletion
+    can never happen from a single request or accidental tap.
+    """
+    data = request.get_json(silent=True) or {}
+    try:
+        password = require_string(data, "password", 128)
+    except ValidationError as exc:
+        return api_error(exc.message, 400, exc.field)
+    if not g.agent.check_password(password):
+        return api_error("Incorrect password. Verify and try again.", 401, "password")
+    session["account_delete_verified"] = True
+    return jsonify({"verified": True})
+
+
+@auth_bp.post("/account/delete")
+@require_auth
+@require_csrf
+def delete_account():
+    """Step 2 of account deletion: irreversible removal after both verifications.
+
+    Requires the password verification flag set by /account/verify plus an
+    explicit typed confirmation, so no single accidental action can wipe the
+    account, its customers, collections, receipts, backups, or audit records.
+    """
+    if not session.get("account_delete_verified"):
+        return api_error("Verify your password before deleting the account.", 403)
+    data = request.get_json(silent=True) or {}
+    if data.get("confirmation") != "DELETE":
+        return api_error("Type DELETE to confirm account deletion.", 400, "confirmation")
+    agent = g.agent
+    _delete_agent_records(agent)
+    db.session.commit()
+    session.clear()
+    return jsonify({"deleted": True})

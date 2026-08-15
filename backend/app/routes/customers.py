@@ -123,6 +123,45 @@ def archive_customer(customer_id):
     return "", 204
 
 
+@customers_bp.post("/<int:customer_id>/delete")
+@require_auth
+@require_csrf
+def delete_customer(customer_id):
+    """Permanently delete a CLOSED customer and every record that belongs to it.
+
+    This is the only path that removes financial records. It is deliberately
+    restricted to customers already marked CLOSED so an active or matured
+    account can never be removed by accident. Changing a status to CLOSED never
+    deletes anything; deletion happens only here, after an explicit confirmation.
+    """
+    customer = owned_customer(customer_id)
+    if not customer:
+        return api_error("Customer not found.", 404)
+    if customer.status != "closed":
+        return api_error("Only CLOSED customers can be deleted.", 400, "status")
+    data = request.get_json(silent=True) or {}
+    if data.get("confirmation") != "DELETE":
+        return api_error("Type DELETE to confirm the deletion.", 400, "confirmation")
+    payment_ids = []
+    receipt_ids = []
+    for payment in list(customer.payments):
+        payment_ids.append(payment.id)
+        for receipt in list(payment.receipts):
+            receipt_ids.append(receipt.id)
+            db.session.delete(receipt)
+        db.session.delete(payment)
+    if payment_ids:
+        AuditLog.query.filter(AuditLog.agent_id == g.agent.id, AuditLog.entity_type == "payment", AuditLog.entity_id.in_(payment_ids)).delete(synchronize_session=False)
+    if receipt_ids:
+        AuditLog.query.filter(AuditLog.agent_id == g.agent.id, AuditLog.entity_type == "payment_receipt", AuditLog.entity_id.in_(receipt_ids)).delete(synchronize_session=False)
+    AuditLog.query.filter(AuditLog.agent_id == g.agent.id, AuditLog.entity_type == "customer", AuditLog.entity_id == customer.id).delete(synchronize_session=False)
+    old = customer.public_dict()
+    db.session.delete(customer)
+    log_change(g.agent.id, "DELETE", "customer", customer.id, old_value=old)
+    db.session.commit()
+    return "", 204
+
+
 @customers_bp.get("/<int:customer_id>/audit")
 @require_auth
 def customer_audit(customer_id):

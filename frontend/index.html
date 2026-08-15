@@ -27,7 +27,7 @@
         <form id="login-form" class="auth-card" novalidate>
           <div class="auth-heading"><p class="eyebrow teal">WELCOME BACK</p><h2>Sign in to your workspace</h2><p>Your records are private to your agent account.</p></div>
           <label>Phone number<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="30" placeholder="98765 43210" /></label>
-          <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="12" placeholder="Your password" /></label>
+          <label>Password<span class="password-field"><input name="password" type="password" autocomplete="current-password" required minlength="12" placeholder="Your password" /><button type="button" class="password-toggle" data-password-toggle aria-label="Show password" aria-pressed="false"><svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="icon-eye-off hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M1 1l22 22"/></svg></button></span></label>
           <button class="button primary wide" type="submit">Sign in <span>→</span></button>
           <p class="auth-switch">New RD agent? <button type="button" class="link-button" data-auth-mode="register">Create your secure account</button></p>
         </form>
@@ -68,7 +68,7 @@
         <section id="view-collections" class="view">
           <div class="page-actions"><div><h2>Collection register</h2><p>Mark monthly RD installments paid as you collect them.</p></div><div class="inline-controls"><input id="collection-month" type="month" /><button id="refresh-collections" class="button secondary">Load month</button></div></div>
           <div id="collection-metrics" class="metric-grid"></div>
-          <section class="panel"><div class="panel-header"><div><h3 id="collection-heading">Monthly collection cycle</h3><p>Each selected month lists active RD accounts whose term includes that month. Tick an account to record any amount received; its remaining balance stays pending until the installment is complete.</p></div></div><div class="table-wrap"><table><thead><tr><th>Paid</th><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid / remaining</th><th>Receipts</th><th>Status</th></tr></thead><tbody id="collections-table"></tbody></table></div></section>
+          <section class="panel"><div class="panel-header"><div><h3 id="collection-heading">Monthly collection cycle</h3><p>Each selected month lists active RD accounts whose term includes that month. Tick an account to record any amount received; its remaining balance stays pending until the installment is complete.</p></div></div><div class="table-wrap"><table><thead><tr><th>Paid</th><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid / remaining</th><th>Receipts</th><th>Status</th><th class="right">Edit</th></tr></thead><tbody id="collections-table"></tbody></table></div></section>
         </section>
 
         <section id="view-customers" class="view">
@@ -95,6 +95,6 @@
 
     <div id="modal-root"></div>
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
-    <script src="/assets/app.js?v=20260813-partial-collections"></script>
+    <script src="/assets/app.js?v=20260815-delete-features"></script>
   </body>
 </html>

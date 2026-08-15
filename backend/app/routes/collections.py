@@ -5,7 +5,7 @@ from flask import Blueprint, g, jsonify, request
 
 from ..models import Customer, Payment
 from ..services.customer_service import active_collection_customers_query
-from ..services.payment_service import payment_collection_summary, record_payment_receipt
+from ..services.payment_service import correct_collection, payment_collection_summary, record_payment_receipt
 from ..utils import ValidationError, api_error, parse_date, parse_int_in_range, parse_positive_money
 from .common import require_auth, require_csrf
 
@@ -90,6 +90,25 @@ def record_collection_receipt(customer_id):
     except ValidationError as exc:
         return api_error(exc.message, 400, exc.field)
     return jsonify({"payment": payment.public_dict(), "receipt": receipt.public_dict(), "summary": payment_collection_summary(customer, payment), "action": action}), 201
+
+
+@collections_bp.put("/payments/<int:payment_id>")
+@require_auth
+@require_csrf
+def edit_collection(payment_id):
+    """Correct an accidentally recorded collection (amount and/or date).
+
+    This does not un-tick the collected toggle — it only fixes the recorded
+    entry. The previous amount and date remain in the audit log.
+    """
+    payment = Payment.query.join(Customer).filter(Payment.id == payment_id, Customer.agent_id == g.agent.id).first()
+    if not payment:
+        return api_error("Collection not found.", 404)
+    try:
+        payment = correct_collection(g.agent, payment, request.get_json(silent=True) or {})
+    except ValidationError as exc:
+        return api_error(exc.message, 400, exc.field)
+    return jsonify({"payment": payment.public_dict(), "summary": payment_collection_summary(payment.customer, payment)})
 
 
 @collections_bp.post("/customers/<int:customer_id>/status")

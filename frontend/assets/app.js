@@ -236,9 +236,10 @@ async function loadCollections() {
       ? result.collections.map(item => {
         const customer = item.customer;
         const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
-        return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong></td><td>${escapeHtml(customer.account_number)}</td><td>${escapeHtml(customer.phone)}</td><td>${money(customer.monthly_rd_amount)}</td><td class="balance-cell"><strong>${money(item.paid_amount)}</strong><small>Remaining ${money(item.remaining_amount)} of ${money(customer.monthly_rd_amount)}</small></td><td>${receiptMarkup(item.receipts)}</td><td>${statusTag(item.status)}</td></tr>`;
+        const editCell = item.payment ? `<button data-collection-edit="${customer.id}">Edit</button>` : '<span class="muted">—</span>';
+        return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong></td><td>${escapeHtml(customer.account_number)}</td><td>${escapeHtml(customer.phone)}</td><td>${money(customer.monthly_rd_amount)}</td><td class="balance-cell"><strong>${money(item.paid_amount)}</strong><small>Remaining ${money(item.remaining_amount)} of ${money(customer.monthly_rd_amount)}</small></td><td>${receiptMarkup(item.receipts)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
       }).join('')
-      : emptyRow(8, 'No active RD accounts have a term covering this collection month.');
+      : emptyRow(9, 'No active RD accounts have a term covering this collection month.');
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -254,7 +255,7 @@ async function loadCustomers() {
     const result = await api(`/api/customers/?${query}`);
     state.customers = result.customers;
     $('#customers-table').innerHTML = result.customers.length
-      ? result.customers.map(customer => `<tr><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${formatCalendarDate(customer.start_date)} - ${formatCalendarDate(customer.maturity_date)}<small>${escapeHtml(remainingDuration(customer.maturity_date))}</small></td><td>${statusTag(customer.status)}</td><td class="right"><div class="row-actions"><button data-customer-view="${customer.id}">View</button>${customer.status !== 'archived' ? `<button data-customer-edit="${customer.id}">Edit</button>` : ''}</div></td></tr>`).join('')
+      ? result.customers.map(customer => `<tr><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${formatCalendarDate(customer.start_date)} - ${formatCalendarDate(customer.maturity_date)}<small>${escapeHtml(remainingDuration(customer.maturity_date))}</small></td><td>${statusTag(customer.status)}</td><td class="right"><div class="row-actions"><button data-customer-view="${customer.id}">View</button>${customer.status !== 'archived' ? `<button data-customer-edit="${customer.id}">Edit</button>` : ''}${customer.status === 'closed' ? `<button class="danger-action" data-customer-delete="${customer.id}">Delete</button>` : ''}</div></td></tr>`).join('')
       : emptyRow(6, 'No customers match this view.');
     const page = result.pagination;
     $('#customer-pagination').innerHTML = `<span>${page.total} record${page.total === 1 ? '' : 's'} · Page ${page.page} of ${Math.max(page.pages, 1)}</span><button data-page="${page.page - 1}" ${page.page <= 1 ? 'disabled' : ''}>Previous</button><button data-page="${page.page + 1}" ${page.page >= page.pages ? 'disabled' : ''}>Next</button>`;
@@ -376,7 +377,7 @@ function closeModal() {
 function openAgentProfile() {
   if (!state.agent) return;
   const agent = state.agent;
-  openModal('Agent profile', 'Your signed-in RD collection account.', `<div class="agent-profile-card"><div class="profile-avatar">${escapeHtml(agent.name.slice(0, 1).toUpperCase())}</div><div><h4>${escapeHtml(agent.name)}</h4><p>RD Agent</p></div></div><div class="profile-summary agent-profile-details"><div>Phone number<strong>${escapeHtml(agent.phone)}</strong></div><div>Email address<strong>${escapeHtml(agent.email || 'Not provided')}</strong></div><div>Account access<strong>Active session</strong></div></div>`, '<button class="button secondary" type="button" data-edit-agent-profile>Edit profile</button><button class="button primary" type="button" data-close-modal>Close</button>');
+  openModal('Agent profile', 'Your signed-in RD collection account.', `<div class="agent-profile-card"><div class="profile-avatar">${escapeHtml(agent.name.slice(0, 1).toUpperCase())}</div><div><h4>${escapeHtml(agent.name)}</h4><p>RD Agent</p></div></div><div class="profile-summary agent-profile-details"><div>Phone number<strong>${escapeHtml(agent.phone)}</strong></div><div>Email address<strong>${escapeHtml(agent.email || 'Not provided')}</strong></div><div>Account access<strong>Active session</strong></div></div>`, '<button class="button danger" type="button" data-delete-agent-account>Delete agent account</button><button class="button secondary" type="button" data-edit-agent-profile>Edit profile</button><button class="button primary" type="button" data-close-modal>Close</button>');
 }
 function openAgentProfileEdit() {
   if (!state.agent) return;
@@ -389,6 +390,19 @@ function customerForm(customer = {}) {
 }
 function openCustomerModal(customer) {
   openModal(customer ? 'Edit customer' : 'Add customer', customer ? 'Changes are permanently retained in the audit log.' : 'Create a new RD customer account.', customerForm(customer));
+}
+function openDeleteCustomerModal(customer) {
+  openModal('Delete customer', `Account ${customer.account_number} · ${customer.status}. This permanently removes the customer and all their records.`, `<div class="notice-panel"><strong>This action is permanent</strong><p>The customer profile, every payment, every receipt, and all related history will be permanently deleted. This cannot be undone.</p></div><form id="delete-customer-form" data-customer-id="${customer.id}"><label>Type DELETE to confirm deletion<input name="confirmation" required maxlength="20" placeholder="DELETE" autocomplete="off" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button danger" type="submit">Delete customer permanently</button></footer></form>`);
+}
+function openDeleteAccountModal() {
+  openModal('Delete agent account', 'This permanently removes your account and all your customer and financial records.', `<div class="notice-panel"><strong>Irreversible action</strong><p>Your account, every customer, every collection, every receipt, backup, and audit record will be permanently deleted. This cannot be undone.</p></div><form id="verify-delete-account-form"><label>Enter your password to continue<input name="password" type="password" required maxlength="128" placeholder="Your current password" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Verify password</button></footer></form><div id="delete-account-step-2" class="hidden"><form id="confirm-delete-account-form"><p class="muted">Type <strong>DELETE</strong> to permanently delete your account.</p><label>Confirmation<input name="confirmation" required maxlength="20" placeholder="DELETE" autocomplete="off" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button danger" type="submit">Permanently delete my account</button></footer></form></div>`);
+}
+function openCollectionEditModal(customerId) {
+  const item = state.collectionRows.find(row => row.customer.id === customerId);
+  if (!item || !item.payment) return;
+  const customer = item.customer;
+  const { month, year } = selectedCollectionPeriod();
+  openModal(`Correct collection · ${customer.customer_name}`, `Account ${customer.account_number}. Fix an accidentally recorded amount or date for ${period(month, year)}.`, `<form id="collection-edit-form" data-customer-id="${customer.id}" data-payment-id="${item.payment.id}"><div class="profile-summary receipt-summary"><div>Monthly RD<strong>${money(customer.monthly_rd_amount)}</strong></div><div>Collected so far<strong>${money(item.paid_amount)}</strong></div><div>Remaining<strong>${money(item.remaining_amount)}</strong></div></div><div class="form-grid"><label>Collected amount<input name="amount" type="number" min="0.01" max="${escapeHtml(customer.monthly_rd_amount)}" step="0.01" required value="${escapeHtml(item.paid_amount)}" /></label><label class="full">Collection date<input name="payment_date" type="date" max="${todayIso}" required value="${escapeHtml(item.payment.payment_date)}" /></label><label class="full">Reason for correction<input name="reason" required minlength="5" maxlength="500" placeholder="e.g. Amount recorded incorrectly" /></label></div><p class="muted">This corrects the recorded collection only. The previous amount and date stay in the audit log, and the paid toggle remains final.</p><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Save correction</button></footer></form>`);
 }
 
 function receiptForm(customer, summary, month, year) {
@@ -489,6 +503,64 @@ document.addEventListener('submit', async event => {
   }
   if (form.id === 'customer-form') return submitCustomer(form);
   if (form.id === 'receipt-form') return submitReceipt(form);
+  if (form.id === 'delete-customer-form') {
+    const values = Object.fromEntries(new FormData(form));
+    if (values.confirmation !== 'DELETE') return toast('Type DELETE to confirm customer deletion.', 'error');
+    if (!window.confirm('This permanently deletes the customer and all their payments, receipts, and history. Continue?')) return;
+    try {
+      await api(`/api/customers/${form.dataset.customerId}/delete`, { method: 'POST', body: values });
+      toast('Customer permanently deleted.');
+      closeModal();
+      await Promise.all([loadCustomers(), loadDashboard()]);
+      maybeAutomaticBackup();
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    return;
+  }
+  if (form.id === 'verify-delete-account-form') {
+    try {
+      const result = await api('/api/auth/account/verify', { method: 'POST', body: Object.fromEntries(new FormData(form)) });
+      if (result.verified) {
+        form.classList.add('hidden');
+        $('#delete-account-step-2').classList.remove('hidden');
+        toast('Password verified. Confirm the deletion to continue.');
+      }
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    return;
+  }
+  if (form.id === 'confirm-delete-account-form') {
+    const values = Object.fromEntries(new FormData(form));
+    if (values.confirmation !== 'DELETE') return toast('Type DELETE to confirm account deletion.', 'error');
+    if (!window.confirm('This permanently deletes your account and ALL related customer and financial records. This cannot be undone.')) return;
+    try {
+      await api('/api/auth/account/delete', { method: 'POST', body: values });
+      await tokenStorage.clear();
+      showAuth();
+      toast('Your account has been permanently deleted.');
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    return;
+  }
+  if (form.id === 'collection-edit-form') {
+    const values = Object.fromEntries(new FormData(form));
+    if (!values.amount || !values.payment_date || !values.reason) return toast('Complete the amount, date, and reason.', 'error');
+    if (!window.confirm('Save this correction? The previous collection value stays in the audit log.')) return;
+    try {
+      await api(`/api/collections/payments/${form.dataset.paymentId}`, { method: 'PUT', body: { amount: values.amount, payment_date: values.payment_date, reason: values.reason } });
+      toast('Collection corrected and audit logged.');
+      closeModal();
+      await Promise.all([loadCollections(), loadDashboard()]);
+      if (state.view === 'pending') loadPending();
+      maybeAutomaticBackup();
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    return;
+  }
   if (form.id === 'agent-profile-form') {
     try {
       const result = await api('/api/auth/profile', { method: 'PUT', body: Object.fromEntries(new FormData(form)) });
@@ -517,6 +589,22 @@ document.addEventListener('submit', async event => {
 
 document.addEventListener('click', async event => {
   if (event.target.closest('.agent-menu')) return openAgentProfile();
+  const passwordToggle = event.target.closest('[data-password-toggle]');
+  if (passwordToggle) {
+    const field = passwordToggle.closest('.password-field');
+    const input = field ? field.querySelector('input[name="password"]') : null;
+    if (input) {
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      passwordToggle.setAttribute('aria-pressed', String(show));
+      passwordToggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      const eye = passwordToggle.querySelector('.icon-eye');
+      const eyeOff = passwordToggle.querySelector('.icon-eye-off');
+      if (eye) eye.classList.toggle('hidden', show);
+      if (eyeOff) eyeOff.classList.toggle('hidden', !show);
+    }
+    return;
+  }
   const button = event.target.closest('button');
   if (!button) return;
   if (button.dataset.authMode) return showAuth(button.dataset.authMode);
@@ -525,8 +613,14 @@ document.addEventListener('click', async event => {
   if (button.id === 'menu-button') return $('#sidebar').classList.toggle('open');
   if (button.dataset.closeModal !== undefined) return closeModal();
   if (button.dataset.editAgentProfile !== undefined) return openAgentProfileEdit();
+  if (button.dataset.deleteAgentAccount !== undefined) return openDeleteAccountModal();
   if (button.dataset.openCustomer !== undefined) return openCustomerModal();
   if (button.dataset.customerView) return openCustomerProfile(Number(button.dataset.customerView));
+  if (button.dataset.customerDelete) {
+    const customer = state.customers.find(item => item.id === Number(button.dataset.customerDelete));
+    if (customer) openDeleteCustomerModal(customer);
+    return;
+  }
   if (button.dataset.customerEdit) {
     const customer = state.customers.find(item => item.id === Number(button.dataset.customerEdit));
     if (customer) {
@@ -540,6 +634,7 @@ document.addEventListener('click', async event => {
     return openPaymentModal(Number(button.dataset.customerPayment));
   }
   if (button.dataset.pendingReceipt) return openPendingReceiptModal(Number(button.dataset.pendingReceipt));
+  if (button.dataset.collectionEdit) return openCollectionEditModal(Number(button.dataset.collectionEdit));
   if (button.dataset.page) {
     state.customerPage = Number(button.dataset.page);
     return loadCustomers();

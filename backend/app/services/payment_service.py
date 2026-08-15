@@ -205,3 +205,69 @@ def void_payment(agent, payment, reason):
         log_change(agent.id, "VOID", "payment", payment.id, old, payment.public_dict())
     db.session.commit()
     return payment
+
+
+def _reconcile_receipts(agent, payment, receipts, new_amount, new_date):
+    """Keep the receipt trail equal to the corrected collection total.
+
+    Adjusts from the most recent receipt backwards so earlier collection history
+    is preserved as much as possible; any receipt reduced to zero is removed and
+    every change is audit logged.
+    """
+    ordered = list(receipts)
+    while len(ordered) > 1:
+        total_other = sum((Decimal(receipt.amount) for receipt in ordered[:-1]), Decimal("0.00"))
+        if new_amount - total_other > Decimal("0.00"):
+            break
+        dropped = ordered.pop()
+        old_receipt = dropped.public_dict()
+        db.session.delete(dropped)
+        log_change(agent.id, "CORRECT_COLLECTION", "payment_receipt", dropped.id, old_receipt, None)
+    last = ordered[-1]
+    last_expected = new_amount - sum((Decimal(receipt.amount) for receipt in ordered[:-1]), Decimal("0.00"))
+    if Decimal(last.amount) != last_expected or last.payment_date != new_date:
+        old_receipt = last.public_dict()
+        last.amount = last_expected
+        last.payment_date = new_date
+        db.session.flush()
+        log_change(agent.id, "CORRECT_COLLECTION", "payment_receipt", last.id, old_receipt, last.public_dict())
+
+
+def correct_collection(agent, payment, raw):
+    """Correct an accidentally recorded collection.
+
+    The paid toggle stays final; this only adjusts the recorded amount and
+    collection date of an already-collected installment. The previous value is
+    preserved in the audit log, and the aggregate payment is kept equal to the
+    sum of its receipts so balances, reports, and backups stay consistent.
+    """
+    if payment.is_void:
+        raise ValidationError("A voided collection cannot be edited.")
+    if not isinstance(raw, dict):
+        raise ValidationError("Request body must be a JSON object.")
+    reason = raw.get("reason")
+    if not isinstance(reason, str) or len(reason.strip()) < 5 or len(reason.strip()) > 500:
+        raise ValidationError("A correction reason of 5–500 characters is required.", "reason")
+    new_amount = parse_positive_money(raw.get("amount"), "amount")
+    new_date = parse_date(raw.get("payment_date"), "payment_date")
+    if new_date > date.today():
+        raise ValidationError("Payment date cannot be in the future.", "payment_date")
+    expected = Decimal(payment.customer.monthly_rd_amount)
+    if new_amount > expected:
+        raise ValidationError(f"Amount cannot exceed the monthly RD amount of ₹{expected:.2f}.", "amount")
+    old = payment.public_dict()
+    receipts = payment.receipts.order_by(PaymentReceipt.payment_date.asc(), PaymentReceipt.id.asc()).all()
+    with db.session.begin_nested():
+        if receipts:
+            _reconcile_receipts(agent, payment, receipts, new_amount, new_date)
+        else:
+            receipt = PaymentReceipt(payment_id=payment.id, amount=new_amount, payment_date=new_date, receipt_number=receipt_number(agent.id))
+            db.session.add(receipt)
+            db.session.flush()
+            log_change(agent.id, "CORRECT_COLLECTION", "payment_receipt", receipt.id, new_value=receipt.public_dict())
+        payment.amount = new_amount
+        payment.payment_date = new_date
+        db.session.flush()
+        log_change(agent.id, "CORRECT_COLLECTION", "payment", payment.id, old, payment.public_dict())
+    db.session.commit()
+    return payment
