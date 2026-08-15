@@ -68,7 +68,7 @@
         <section id="view-collections" class="view">
           <div class="page-actions"><div><h2>Collection register</h2><p>Mark monthly RD installments paid as you collect them.</p></div><div class="inline-controls"><input id="collection-month" type="month" /><button id="refresh-collections" class="button secondary">Load month</button></div></div>
           <div id="collection-metrics" class="metric-grid"></div>
-          <section class="panel"><div class="panel-header"><div><h3 id="collection-heading">Monthly collection cycle</h3><p>Each selected month lists active RD accounts whose term includes that month. Tick an account to record any amount received; its remaining balance stays pending until the installment is complete.</p></div></div><div class="table-wrap"><table><thead><tr><th>Paid</th><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid / remaining</th><th>Receipts</th><th>Status</th><th class="right">Edit</th></tr></thead><tbody id="collections-table"></tbody></table></div></section>
+          <section class="panel"><div class="panel-header"><div><h3 id="collection-heading">Monthly collection cycle</h3><p>Each selected month lists active RD accounts whose term includes that month. Tick an account to record any amount received; its remaining balance stays pending until the installment is complete.</p></div></div><div class="table-wrap"><table><thead><tr><th>Paid</th><th>Customer</th><th>Account no.</th><th>Phone</th><th>Monthly RD</th><th>Paid / remaining</th><th>Receipts</th><th>Status</th><th class="right">Action</th></tr></thead><tbody id="collections-table"></tbody></table></div></section>
         </section>
 
         <section id="view-customers" class="view">
@@ -83,7 +83,7 @@
 
         <section id="view-reports" class="view">
           <div class="page-actions"><div><h2>Reports</h2><p>Review accurate collection records and export a shareable copy.</p></div></div>
-          <section class="panel"><div class="report-controls"><label>Report<select id="report-type"><option value="monthly">Monthly collection</option><option value="customers">Customer-wise summary</option><option value="pending">Pending collection</option></select></label><label id="report-period-field">Period<input id="report-month" type="month" /></label><button id="generate-report" class="button primary">Generate report</button><div class="export-buttons"><button class="button secondary" data-export="xlsx">Export Excel</button><button class="button secondary" data-export="pdf">Export PDF</button></div></div><div id="report-summary" class="report-summary"></div><div class="table-wrap"><table id="report-table"></table></div></section>
+          <section class="panel"><div class="report-controls"><label>Report<select id="report-type"><option value="monthly">Monthly collection</option><option value="customers">Customer-wise summary</option><option value="pending">Pending collection</option></select></label><label id="report-period-field">Period<input id="report-month" type="month" /></label><button id="generate-report" class="button primary">Generate report</button><div class="export-buttons"><button class="button secondary" data-export="pdf">Export PDF</button></div></div><div id="report-summary" class="report-summary"></div><div class="table-wrap"><table id="report-table"></table></div></section>
         </section>
 
         <section id="view-backups" class="view">

@@ -236,7 +236,7 @@ async function loadCollections() {
       ? result.collections.map(item => {
         const customer = item.customer;
         const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
-        const editCell = item.payment ? `<button data-collection-edit="${customer.id}">Edit</button>` : '<span class="muted">—</span>';
+        const editCell = item.payment ? `<button data-collection-off="${customer.id}">OFF</button>` : '<span class="muted">—</span>';
         return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong></td><td>${escapeHtml(customer.account_number)}</td><td>${escapeHtml(customer.phone)}</td><td>${money(customer.monthly_rd_amount)}</td><td class="balance-cell"><strong>${money(item.paid_amount)}</strong><small>Remaining ${money(item.remaining_amount)} of ${money(customer.monthly_rd_amount)}</small></td><td>${receiptMarkup(item.receipts)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
       }).join('')
       : emptyRow(9, 'No active RD accounts have a term covering this collection month.');
@@ -397,12 +397,12 @@ function openDeleteCustomerModal(customer) {
 function openDeleteAccountModal() {
   openModal('Delete agent account', 'This permanently removes your account and all your customer and financial records.', `<div class="notice-panel"><strong>Irreversible action</strong><p>Your account, every customer, every collection, every receipt, backup, and audit record will be permanently deleted. This cannot be undone.</p></div><form id="verify-delete-account-form"><label>Enter your password to continue<input name="password" type="password" required maxlength="128" placeholder="Your current password" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Verify password</button></footer></form><div id="delete-account-step-2" class="hidden"><form id="confirm-delete-account-form"><p class="muted">Type <strong>DELETE</strong> to permanently delete your account.</p><label>Confirmation<input name="confirmation" required maxlength="20" placeholder="DELETE" autocomplete="off" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button danger" type="submit">Permanently delete my account</button></footer></form></div>`);
 }
-function openCollectionEditModal(customerId) {
+function openCollectionOffModal(customerId) {
   const item = state.collectionRows.find(row => row.customer.id === customerId);
   if (!item || !item.payment) return;
   const customer = item.customer;
   const { month, year } = selectedCollectionPeriod();
-  openModal(`Correct collection · ${customer.customer_name}`, `Account ${customer.account_number}. Fix an accidentally recorded amount or date for ${period(month, year)}.`, `<form id="collection-edit-form" data-customer-id="${customer.id}" data-payment-id="${item.payment.id}"><div class="profile-summary receipt-summary"><div>Monthly RD<strong>${money(customer.monthly_rd_amount)}</strong></div><div>Collected so far<strong>${money(item.paid_amount)}</strong></div><div>Remaining<strong>${money(item.remaining_amount)}</strong></div></div><div class="form-grid"><label>Collected amount<input name="amount" type="number" min="0.01" max="${escapeHtml(customer.monthly_rd_amount)}" step="0.01" required value="${escapeHtml(item.paid_amount)}" /></label><label class="full">Collection date<input name="payment_date" type="date" max="${todayIso}" required value="${escapeHtml(item.payment.payment_date)}" /></label><label class="full">Reason for correction<input name="reason" required minlength="5" maxlength="500" placeholder="e.g. Amount recorded incorrectly" /></label></div><p class="muted">This corrects the recorded collection only. The previous amount and date stay in the audit log, and the paid toggle remains final.</p><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Save correction</button></footer></form>`);
+  openModal('Undo Payment Mark?', `This will remove the paid mark for ${customer.customer_name} for ${period(month, year)}.`, `<form id="collection-off-form" data-customer-id="${customer.id}" data-month="${month}" data-year="${year}"><div class="notice-panel"><strong>Removes only this paid mark</strong><p>This undoes the paid mark for ${escapeHtml(customer.customer_name)} for ${period(month, year)}. The installment returns to its pending state. No other customer, payment, or month is affected.</p></div><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Undo / Confirm</button></footer></form>`);
 }
 
 function receiptForm(customer, summary, month, year) {
@@ -545,13 +545,10 @@ document.addEventListener('submit', async event => {
     }
     return;
   }
-  if (form.id === 'collection-edit-form') {
-    const values = Object.fromEntries(new FormData(form));
-    if (!values.amount || !values.payment_date || !values.reason) return toast('Complete the amount, date, and reason.', 'error');
-    if (!window.confirm('Save this correction? The previous collection value stays in the audit log.')) return;
+  if (form.id === 'collection-off-form') {
     try {
-      await api(`/api/collections/payments/${form.dataset.paymentId}`, { method: 'PUT', body: { amount: values.amount, payment_date: values.payment_date, reason: values.reason } });
-      toast('Collection corrected and audit logged.');
+      await api(`/api/collections/customers/${form.dataset.customerId}/undo-payment`, { method: 'POST', body: { month: Number(form.dataset.month), year: Number(form.dataset.year) } });
+      toast('Paid mark removed. The installment is back to pending.');
       closeModal();
       await Promise.all([loadCollections(), loadDashboard()]);
       if (state.view === 'pending') loadPending();
@@ -634,7 +631,7 @@ document.addEventListener('click', async event => {
     return openPaymentModal(Number(button.dataset.customerPayment));
   }
   if (button.dataset.pendingReceipt) return openPendingReceiptModal(Number(button.dataset.pendingReceipt));
-  if (button.dataset.collectionEdit) return openCollectionEditModal(Number(button.dataset.collectionEdit));
+  if (button.dataset.collectionOff) return openCollectionOffModal(Number(button.dataset.collectionOff));
   if (button.dataset.page) {
     state.customerPage = Number(button.dataset.page);
     return loadCustomers();

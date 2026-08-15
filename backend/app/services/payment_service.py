@@ -271,3 +271,32 @@ def correct_collection(agent, payment, raw):
         log_change(agent.id, "CORRECT_COLLECTION", "payment", payment.id, old, payment.public_dict())
     db.session.commit()
     return payment
+
+
+def undo_payment_mark(agent, customer, month, year):
+    """Undo the paid mark for exactly one customer and month.
+
+    This is the deliberate exception to the final-payment rule: it removes the
+    payment mark for a single (customer, month, year) and restores that
+    customer's unmarked/pending state. Only that payment and its own receipts
+    are removed; no other customer, payment, receipt, or historical record is
+    touched. The removal is recorded in the audit log on the customer.
+    """
+    month = parse_int_in_range(month, "month", 1, 12)
+    year = parse_int_in_range(year, "year", 2000, 2200)
+    payment = Payment.query.filter_by(customer_id=customer.id, month=month, year=year).first()
+    if not payment:
+        raise ValidationError("No paid mark exists for this customer and month.", "month")
+    if payment.is_void:
+        raise ValidationError("A voided payment mark cannot be undone.", "month")
+    old = payment.public_dict()
+    receipts = list(payment.receipts)
+    old["receipts"] = [receipt.public_dict() for receipt in receipts]
+    with db.session.begin_nested():
+        for receipt in receipts:
+            db.session.delete(receipt)
+        db.session.delete(payment)
+        db.session.flush()
+        log_change(agent.id, "UNDO_PAYMENT_MARK", "customer", customer.id, old_value=old)
+    db.session.commit()
+    return payment

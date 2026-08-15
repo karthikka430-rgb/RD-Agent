@@ -5,7 +5,7 @@ from flask import Blueprint, g, jsonify, request
 
 from ..models import Customer, Payment
 from ..services.customer_service import active_collection_customers_query
-from ..services.payment_service import correct_collection, payment_collection_summary, record_payment_receipt
+from ..services.payment_service import correct_collection, payment_collection_summary, record_payment_receipt, undo_payment_mark
 from ..utils import ValidationError, api_error, parse_date, parse_int_in_range, parse_positive_money
 from .common import require_auth, require_csrf
 
@@ -109,6 +109,27 @@ def edit_collection(payment_id):
     except ValidationError as exc:
         return api_error(exc.message, 400, exc.field)
     return jsonify({"payment": payment.public_dict(), "summary": payment_collection_summary(payment.customer, payment)})
+
+
+@collections_bp.post("/customers/<int:customer_id>/undo-payment")
+@require_auth
+@require_csrf
+def undo_payment(customer_id):
+    """Remove the paid mark for one customer and month (the OFF action).
+
+    Only the selected customer's payment for the selected month is removed,
+    restoring that customer's unmarked/pending state. No other customer,
+    payment, or month is affected.
+    """
+    customer = Customer.query.filter_by(id=customer_id, agent_id=g.agent.id).first()
+    if not customer:
+        return api_error("Customer not found.", 404)
+    data = request.get_json(silent=True) or {}
+    try:
+        payment = undo_payment_mark(g.agent, customer, data.get("month"), data.get("year"))
+    except ValidationError as exc:
+        return api_error(exc.message, 400, exc.field)
+    return jsonify({"payment": payment.public_dict(), "summary": payment_collection_summary(customer, None)})
 
 
 @collections_bp.post("/customers/<int:customer_id>/status")
