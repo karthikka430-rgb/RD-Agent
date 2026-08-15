@@ -455,12 +455,16 @@ async function loadReport() {
   }
 }
 
-function openModal(title, subtitle, body, footer = '') {
+function openModal(title, subtitle, body, footer = '', pushHistory = true) {
+  const wasOpen = $('#modal-root')?.innerHTML.trim() !== '';
   $('#modal-root').innerHTML = `<div class="modal-overlay" role="dialog" aria-modal="true"><section class="modal"><header class="modal-header"><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(subtitle)}</p></div><button class="modal-close" data-close-modal aria-label="Close">x</button></header><div class="modal-body">${body}</div>${footer ? `<footer class="modal-footer">${footer}</footer>` : ''}</section></div>`;
-  history.pushState({ modal: true }, '');
+  if (pushHistory && !wasOpen) {
+    history.pushState({ modal: true }, '');
+  }
 }
 function closeModal() {
   $('#modal-root').innerHTML = '';
+  state.profileShowAllReceipts = false;
 }
 function openAgentProfile() {
   if (!state.agent) return;
@@ -474,7 +478,9 @@ function openAgentProfileEdit() {
 }
 function customerForm(customer = {}) {
   const value = (name, fallback = '') => escapeHtml(customer[name] ?? fallback);
-  return `<form id="customer-form"><div class="form-grid"><label class="full">Customer name<input name="customer_name" required maxlength="160" placeholder="Enter full name" value="${value('customer_name')}" /></label><label>Account number<input name="account_number" required maxlength="64" placeholder="Enter account number" value="${value('account_number')}" /></label><label>Phone<input name="phone" required maxlength="30" placeholder="Enter phone number" value="${value('phone')}" /></label><label>Monthly RD amount<input name="monthly_rd_amount" type="number" min="0.01" max="9999999999.99" step="0.01" required placeholder="Enter monthly RD amount" value="${value('monthly_rd_amount')}" /></label><label>Status<select name="status"><option value="active" ${customer.status === 'active' || !customer.status ? 'selected' : ''}>Active</option><option value="matured" ${customer.status === 'matured' ? 'selected' : ''}>Matured</option><option value="closed" ${customer.status === 'closed' ? 'selected' : ''}>Closed</option></select></label><label>Start date<input name="start_date" type="text" placeholder="YYYY-MM-DD or DD/MM/YYYY" required value="${value('start_date')}" /></label><label>Maturity date<input name="maturity_date" type="text" placeholder="YYYY-MM-DD or DD/MM/YYYY" required value="${value('maturity_date')}" /></label></div><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">${customer.id ? 'Save changes' : 'Create customer'}</button></footer></form>`;
+  const startDateVal = customer.start_date ? formatCalendarDate(customer.start_date) : '';
+  const maturityDateVal = customer.maturity_date ? formatCalendarDate(customer.maturity_date) : '';
+  return `<form id="customer-form"><div class="form-grid"><label class="full">Customer name<input name="customer_name" required maxlength="160" placeholder="Enter full name" value="${value('customer_name')}" /></label><label>Account number<input name="account_number" required maxlength="64" placeholder="Enter account number" value="${value('account_number')}" /></label><label>Phone<input name="phone" required maxlength="30" placeholder="Enter phone number" value="${value('phone')}" /></label><label>Monthly RD amount<input name="monthly_rd_amount" type="number" min="0.01" max="9999999999.99" step="0.01" required placeholder="Enter monthly RD amount" value="${value('monthly_rd_amount')}" /></label><label>Status<select name="status"><option value="active" ${customer.status === 'active' || !customer.status ? 'selected' : ''}>Active</option><option value="matured" ${customer.status === 'matured' ? 'selected' : ''}>Matured</option><option value="closed" ${customer.status === 'closed' ? 'selected' : ''}>Closed</option></select></label><label>Start date<input name="start_date" type="text" placeholder="DD/MM/YYYY" required value="${startDateVal}" /></label><label>Maturity date<input name="maturity_date" type="text" placeholder="DD/MM/YYYY" required value="${maturityDateVal}" /></label></div><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">${customer.id ? 'Save changes' : 'Create customer'}</button></footer></form>`;
 }
 function openCustomerModal(customer) {
   openModal(customer ? 'Edit customer' : 'Add customer', customer ? 'Changes are permanently retained in the audit log.' : 'Create a new RD customer account.', customerForm(customer));
@@ -987,11 +993,16 @@ document.addEventListener('input', event => {
     const form = event.target.closest('#customer-form');
     const matInput = form?.querySelector('input[name="maturity_date"]');
     if (matInput && (!matInput.value || matInput.dataset.autoFilled)) {
-      const normalized = normalizeDateInput(event.target.value);
-      if (normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-        const [y, m, d] = normalized.split('-').map(Number);
-        matInput.value = `${y + 5}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        matInput.dataset.autoFilled = 'true';
+      const val = event.target.value.trim();
+      const parts = val.split(/[\/\-\.]/);
+      if (parts.length === 3 && parts[2].length === 4) {
+        const d = parts[0].padStart(2, '0');
+        const m = parts[1].padStart(2, '0');
+        const y = Number(parts[2]);
+        if (!Number.isNaN(y)) {
+          matInput.value = `${d}/${m}/${y + 5}`;
+          matInput.dataset.autoFilled = 'true';
+        }
       }
     }
   }
