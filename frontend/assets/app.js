@@ -10,6 +10,7 @@ const state = {
   backups: [],
   profile: null,
   report: null,
+  profileShowAllReceipts: false,
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -620,68 +621,84 @@ function normalizeDateInput(val) {
   return str;
 }
 
-async function openCustomerProfile(customerId, showAllReceipts = false) {
-  try {
-    const result = await api(`/api/customers/${customerId}`);
-    const customer = result.customer;
-    state.profile = result;
-    state.profileShowAllReceipts = showAllReceipts;
-    const receipts = result.payments.flatMap(p => (p.receipts || []).map(r => ({ ...r, month: p.month, year: p.year })));
-    const pendingInfo = calculatePendingMonths(customer, result.payments);
-    const bodyHtml = `
-      <div class="customer-detail-cards">
-        <div class="detail-card">
-          <div class="detail-card-title">Account information</div>
-          <div class="detail-grid-2">
-            <div><div class="detail-item-label">Account number</div><div class="detail-item-value">${escapeHtml(customer.account_number)}</div></div>
-            <div><div class="detail-item-label">Monthly RD amount</div><div class="detail-item-value">${money(customer.monthly_rd_amount)} ${statusTag(customer.status)}</div></div>
-          </div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-title">RD term</div>
-          <div class="detail-grid-2">
-            <div><div class="detail-item-label">Start date</div><div class="detail-item-value">${formatCalendarDate(customer.start_date)}</div></div>
-            <div><div class="detail-item-label">Maturity date</div><div class="detail-item-value">${formatCalendarDate(customer.maturity_date)}</div></div>
-          </div>
-          <div style="margin-top:0.5rem;"><div class="detail-item-label">Remaining term</div><div class="detail-item-value" style="font-size:0.8125rem;">${escapeHtml(remainingDuration(customer.maturity_date))}</div></div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-title">Collection summary</div>
-          <div class="summary-tile-grid">
-            <div class="stat-tile">
-              <div class="detail-item-label">Total paid</div>
-              <div class="detail-item-value text-green">${money(pendingInfo.totalPaid)}</div>
-            </div>
-            <div class="stat-tile">
-              <div class="detail-item-label">Pending months</div>
-              <div class="detail-item-value ${pendingInfo.count > 0 ? 'text-amber' : 'text-green'}">
-                ${pendingInfo.count} month${pendingInfo.count === 1 ? '' : 's'}
-              </div>
-            </div>
-            <div class="stat-tile">
-              <div class="detail-item-label">Outstanding</div>
-              <div class="detail-item-value ${Number(pendingInfo.outstanding) > 0 ? 'text-amber' : ''}">
-                ${money(pendingInfo.outstanding)}
-              </div>
-            </div>
-            <div class="stat-tile">
-              <div class="detail-item-label">Advance paid</div>
-              <div class="detail-item-value ${Number(pendingInfo.advance) > 0 ? 'text-green' : ''}">
-                ${money(pendingInfo.advance)} ${pendingInfo.advanceMonths > 0 ? `<small style="font-size:0.7rem;color:var(--green-text);font-weight:700;">(${pendingInfo.advanceMonths}m)</small>` : ''}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-title" style="display:flex;justify-content:space-between;align-items:center;">
-            <span>${showAllReceipts ? `All receipts (${receipts.length})` : 'Recent receipts'}</span>
-            ${receipts.length > 3 ? `<button type="button" class="text-button" data-toggle-receipts="${customer.id}">${showAllReceipts ? 'Show recent' : 'View all →'}</button>` : ''}
-          </div>
-          ${receipts.length ? `<div class="receipts-scroll-list">${(showAllReceipts ? receipts : receipts.slice(0, 3)).map(r => `<div class="receipt-item-row"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small>${escapeHtml(r.receipt_number)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`).join('')}</div>` : '<div class="muted font-sm">No receipts yet</div>'}
+function renderCustomerProfile(result, showAllReceipts) {
+  const customer = result.customer;
+  state.profileShowAllReceipts = showAllReceipts;
+  const receipts = result.payments.flatMap(p => (p.receipts || []).map(r => ({ ...r, month: p.month, year: p.year })));
+  const pendingInfo = calculatePendingMonths(customer, result.payments);
+  const bodyHtml = `
+    <div class="customer-detail-cards">
+      <div class="detail-card">
+        <div class="detail-card-title">Account information</div>
+        <div class="detail-grid-2">
+          <div><div class="detail-item-label">Account number</div><div class="detail-item-value">${escapeHtml(customer.account_number)}</div></div>
+          <div><div class="detail-item-label">Monthly RD amount</div><div class="detail-item-value">${money(customer.monthly_rd_amount)} ${statusTag(customer.status)}</div></div>
         </div>
       </div>
-    `;
-    openModal(customer.customer_name, `Account ${customer.account_number} · ${customer.status}`, bodyHtml, `<button class="button secondary" type="button" data-customer-edit="${customer.id}">Edit customer</button><button class="button primary" type="button" data-customer-payment="${customer.id}">Record collection</button>`);
+      <div class="detail-card">
+        <div class="detail-card-title">RD term</div>
+        <div class="detail-grid-2">
+          <div><div class="detail-item-label">Start date</div><div class="detail-item-value">${formatCalendarDate(customer.start_date)}</div></div>
+          <div><div class="detail-item-label">Maturity date</div><div class="detail-item-value">${formatCalendarDate(customer.maturity_date)}</div></div>
+        </div>
+        <div style="margin-top:0.5rem;"><div class="detail-item-label">Remaining term</div><div class="detail-item-value" style="font-size:0.8125rem;">${escapeHtml(remainingDuration(customer.maturity_date))}</div></div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Collection summary</div>
+        <div class="summary-tile-grid">
+          <div class="stat-tile">
+            <div class="detail-item-label">Total paid</div>
+            <div class="detail-item-value text-green">${money(pendingInfo.totalPaid)}</div>
+          </div>
+          <div class="stat-tile">
+            <div class="detail-item-label">Pending months</div>
+            <div class="detail-item-value ${pendingInfo.count > 0 ? 'text-amber' : 'text-green'}">
+              ${pendingInfo.count} month${pendingInfo.count === 1 ? '' : 's'}
+            </div>
+          </div>
+          <div class="stat-tile">
+            <div class="detail-item-label">Outstanding</div>
+            <div class="detail-item-value ${Number(pendingInfo.outstanding) > 0 ? 'text-amber' : ''}">
+              ${money(pendingInfo.outstanding)}
+            </div>
+          </div>
+          <div class="stat-tile">
+            <div class="detail-item-label">Advance paid</div>
+            <div class="detail-item-value ${Number(pendingInfo.advance) > 0 ? 'text-green' : ''}">
+              ${money(pendingInfo.advance)} ${pendingInfo.advanceMonths > 0 ? `<small style="font-size:0.7rem;color:var(--green-text);font-weight:700;">(${pendingInfo.advanceMonths}m)</small>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>${showAllReceipts ? `All receipts (${receipts.length})` : `Recent receipts`}</span>
+          ${receipts.length > 3 ? `<button type="button" class="text-button" data-toggle-receipts="${customer.id}">${showAllReceipts ? '← Show recent' : 'View all →'}</button>` : ''}
+        </div>
+        ${receipts.length
+          ? `<div class="receipts-scroll-list">${(showAllReceipts ? receipts : receipts.slice(0, 3)).map(r =>
+              `<div class="receipt-item-row"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small>${escapeHtml(r.receipt_number)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`
+            ).join('')}</div>`
+          : '<div class="muted font-sm">No receipts yet</div>'
+        }
+      </div>
+    </div>
+  `;
+  openModal(
+    customer.customer_name,
+    `Account ${customer.account_number} · ${customer.status}`,
+    bodyHtml,
+    `<button class="button secondary" type="button" data-customer-edit="${customer.id}">Edit customer</button><button class="button primary" type="button" data-customer-payment="${customer.id}">Record collection</button>`,
+    !$('#modal-root')?.innerHTML.trim()   // only push history if modal isn't already open
+  );
+}
+
+async function openCustomerProfile(customerId) {
+  try {
+    const result = await api(`/api/customers/${customerId}`);
+    state.profile = result;
+    state.profileShowAllReceipts = false;
+    renderCustomerProfile(result, false);
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -931,8 +948,10 @@ document.addEventListener('click', async event => {
     return;
   }
   if (button.dataset.toggleReceipts) {
-    const custId = Number(button.dataset.toggleReceipts);
-    return openCustomerProfile(custId, !state.profileShowAllReceipts);
+    if (state.profile) {
+      renderCustomerProfile(state.profile, !state.profileShowAllReceipts);
+    }
+    return;
   }
   if (button.id === 'logout-button') {
     try {
@@ -962,25 +981,16 @@ document.addEventListener('keydown', event => {
   }
 });
 
+// Android back: handled ONLY via MainActivity.onBackPressed -> window.handleAndroidBack
+// Do NOT use Capacitor backButton listener to avoid double-firing
 window.handleAndroidBack = function() {
-  const handled = handleBackAction();
-  if (!handled) {
-    if (window.Capacitor?.Plugins?.App) {
-      window.Capacitor.Plugins.App.exitApp();
-    }
-  }
-  return handled;
+  return handleBackAction();
 };
 
+// For browsers (desktop/web): popstate fires when user presses browser back button
 window.addEventListener('popstate', () => {
   handleBackAction();
 });
-
-if (window.Capacitor?.Plugins?.App) {
-  window.Capacitor.Plugins.App.addListener('backButton', () => {
-    window.handleAndroidBack();
-  });
-}
 
 let customerSearchTimer;
 $('#customer-search').addEventListener('input', () => {

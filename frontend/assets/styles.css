@@ -572,18 +572,30 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* TOPBAR */
+/*
+ * Android status bar is ~24-28dp; we add 40px top padding so hamburger,
+ * title and avatar are well below the clock/battery/signal row.
+ * env(safe-area-inset-top) returns 0 in Capacitor without immersive flags.
+ */
 .topbar {
-  min-height: 4.5rem;
+  min-height: 4.75rem;
   height: auto;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  padding: max(1.85rem, calc(env(safe-area-inset-top, 0px) + 0.85rem)) max(env(safe-area-inset-right, 0px), 1rem) 0.65rem max(env(safe-area-inset-left, 0px), 1rem);
+  padding: 40px 1rem 0.65rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 30;
+}
+
+@media (min-width: 881px) {
+  .topbar {
+    padding-top: 0.75rem;
+    min-height: 3.5rem;
+  }
 }
 
 .topbar h1 {
@@ -647,24 +659,25 @@ input:focus, select:focus, textarea:focus {
   margin-right: 0.5rem;
 }
 
-/* ==========================================================================
-   MOBILE BOTTOM NAVIGATION BAR
-   ========================================================================== */
+/*
+ * Android gesture bar is ~16-24dp; we give 28px bottom padding so the
+ * five tabs stay above the home indicator / navigation bar.
+ */
 .mobile-bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  min-height: 4.5rem;
+  min-height: 4.75rem;
   height: auto;
   background: var(--surface);
   border-top: 1px solid var(--line);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0.4rem max(0.5rem, env(safe-area-inset-left, 0px)) max(1.15rem, calc(env(safe-area-inset-bottom, 0px) + 0.6rem)) max(0.5rem, env(safe-area-inset-right, 0px));
+  padding: 0.4rem 0.5rem 28px 0.5rem;
   z-index: 40;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
 }
 
 @media (min-width: 881px) {
@@ -686,6 +699,7 @@ input:focus, select:focus, textarea:focus {
   font-size: 0.65rem;
   font-weight: 600;
   padding: 0.35rem 0;
+  min-height: 2.75rem;
 }
 
 .bottom-nav-item.active {
@@ -702,7 +716,7 @@ input:focus, select:focus, textarea:focus {
    ========================================================================== */
 .main-content {
   min-width: 0;
-  padding-bottom: 5.8rem;
+  padding-bottom: 6rem;
 }
 
 @media (min-width: 881px) {
@@ -1428,6 +1442,10 @@ td small {
 
 .text-amber {
   color: var(--amber) !important;
+}
+
+.text-green {
+  color: var(--green-text) !important;
 }
 
 .summary-tile-grid {
