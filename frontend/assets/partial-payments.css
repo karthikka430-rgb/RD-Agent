@@ -39,23 +39,6 @@
   color: var(--teal-dark);
 }
 
-.internal-backup-panel {
-  margin-top: 1.5rem;
-}
-
-.backup-status {
-  font-weight: 700;
-  color: var(--amber-text) !important;
-}
-
-.backup-status.online {
-  color: var(--green-text) !important;
-}
-
-.backup-status.offline {
-  color: var(--amber-text) !important;
-}
-
 @media (min-width: 881px) {
   .metric-grid {
     grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));

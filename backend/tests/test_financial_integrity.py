@@ -1,12 +1,10 @@
-import json
 from datetime import date
-from io import BytesIO
 
 import pytest
 
 from app import create_app
 from app.extensions import db
-from app.models import Agent, AuditLog, BackupSnapshot, Payment, PaymentReceipt, is_private_email
+from app.models import Agent, AuditLog, Payment, PaymentReceipt, is_private_email
 
 
 class TestConfig:
@@ -354,108 +352,3 @@ def test_partial_collection_preserves_receipts_balance_history_and_reports(app):
         assert PaymentReceipt.query.filter_by(payment_id=payment_id).count() == 2
         payment_actions = [log.action for log in AuditLog.query.filter_by(entity_type="payment", entity_id=payment_id).all()]
         assert payment_actions == ["CREATE", "PARTIAL_RECEIPT"]
-
-
-def test_backup_restore_preserves_each_partial_receipt(app):
-    source = app.test_client()
-    csrf = register(source, "backup-source@example.com")
-    customer_id = add_customer_with_values(
-        source,
-        csrf,
-        name="Backup Customer",
-        account="RD-BACKUP-PARTIAL",
-        status="active",
-        start_date="2025-01-01",
-        maturity_date="2030-01-01",
-        amount="500.00",
-    )
-    month, year = date.today().month, date.today().year
-    for amount in ("175.00", "325.00"):
-        response = source.post(
-            f"/api/collections/customers/{customer_id}/receipts",
-            headers={"X-CSRF-Token": csrf},
-            json={"month": month, "year": year, "amount": amount, "payment_date": date.today().isoformat()},
-        )
-        assert response.status_code == 201, response.get_json()
-
-    backup_response = source.get("/api/backups/download")
-    backup = json.loads(backup_response.data)
-    assert backup["version"] == 2
-    assert [receipt["amount"] for receipt in backup["customers"][0]["payments"][0]["receipts"]] == ["175.00", "325.00"]
-
-    destination = app.test_client()
-    destination_csrf = register(destination, "backup-destination@example.com", "Agent Two", "9876543218")
-    restored = destination.post(
-        "/api/backups/restore",
-        headers={"X-CSRF-Token": destination_csrf},
-        data={"backup": (BytesIO(backup_response.data), "rd-backup.json")},
-        content_type="multipart/form-data",
-    )
-    assert restored.status_code == 200, restored.get_json()
-    assert restored.get_json()["imported_payments"] == 1
-    customers = destination.get("/api/customers/").get_json()["customers"]
-    restored_history = destination.get(f"/api/customers/{customers[0]['id']}").get_json()["payments"][0]
-    assert restored_history["amount"] == "500.00"
-    assert [receipt["amount"] for receipt in restored_history["receipts"]] == ["175.00", "325.00"]
-
-
-def test_internal_automatic_backup_is_agent_private_deduplicated_and_receipt_aware(app):
-    client = app.test_client()
-    csrf = register(client, "internal-backup@example.com")
-    customer_id = add_customer_with_values(
-        client,
-        csrf,
-        name="Internal Backup Customer",
-        account="RD-INTERNAL-BACKUP",
-        status="active",
-        start_date="2025-01-01",
-        maturity_date="2030-01-01",
-        amount="500.00",
-    )
-    month, year = date.today().month, date.today().year
-    receipt_response = client.post(
-        f"/api/collections/customers/{customer_id}/receipts",
-        headers={"X-CSRF-Token": csrf},
-        json={"month": month, "year": year, "amount": "200.00", "payment_date": date.today().isoformat()},
-    )
-    assert receipt_response.status_code == 201
-
-    first = client.post("/api/backups/internal/automatic", headers={"X-CSRF-Token": csrf})
-    assert first.status_code == 201, first.get_json()
-    first_data = first.get_json()
-    assert first_data["created"] is True
-    assert first_data["backup"] == {
-        "id": 1,
-        "trigger": "automatic",
-        "customer_count": 1,
-        "payment_count": 1,
-        "receipt_count": 1,
-        "created_at": first_data["backup"]["created_at"],
-    }
-
-    unchanged = client.post("/api/backups/internal/automatic", headers={"X-CSRF-Token": csrf})
-    assert unchanged.status_code == 200
-    assert unchanged.get_json()["created"] is False
-    assert len(client.get("/api/backups/internal").get_json()["backups"]) == 1
-
-    second_receipt = client.post(
-        f"/api/collections/customers/{customer_id}/receipts",
-        headers={"X-CSRF-Token": csrf},
-        json={"month": month, "year": year, "amount": "300.00", "payment_date": date.today().isoformat()},
-    )
-    assert second_receipt.status_code == 201
-    changed = client.post("/api/backups/internal/automatic", headers={"X-CSRF-Token": csrf})
-    assert changed.status_code == 201
-    assert changed.get_json()["backup"]["receipt_count"] == 2
-
-    other_agent = app.test_client()
-    other_csrf = register(other_agent, "other-internal@example.com", "Agent Two", "9876543219")
-    assert other_agent.get("/api/backups/internal").get_json()["backups"] == []
-    assert other_agent.post("/api/backups/internal/1/restore", headers={"X-CSRF-Token": other_csrf}).status_code == 404
-
-    with app.app_context():
-        snapshot = db.session.get(BackupSnapshot, 2)
-        stored = json.loads(snapshot.payload)
-        assert stored["customers"][0]["payments"][0]["amount"] == "500.00"
-        assert [receipt["amount"] for receipt in stored["customers"][0]["payments"][0]["receipts"]] == ["200.00", "300.00"]
-        assert AuditLog.query.filter_by(action="AUTO_BACKUP", entity_type="backup_snapshot").count() == 2

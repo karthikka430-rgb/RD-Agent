@@ -4,7 +4,7 @@ import pytest
 
 from app import create_app
 from app.extensions import db
-from app.models import Agent, AuditLog, BackupSnapshot, Customer, Payment, PaymentReceipt, RefreshToken
+from app.models import Agent, AuditLog, Customer, Payment, PaymentReceipt, RefreshToken
 
 
 class TestConfig:
@@ -184,7 +184,6 @@ def test_agent_account_deletion_requires_password_and_typed_confirmation(app):
         assert Payment.query.count() == 0
         assert PaymentReceipt.query.count() == 0
         assert AuditLog.query.count() == 0
-        assert BackupSnapshot.query.count() == 0
         assert RefreshToken.query.count() == 0
 
 

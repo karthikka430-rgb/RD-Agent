@@ -2,7 +2,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, g, jsonify, request, session
 
 from ..extensions import db
-from ..models import Agent, AuditLog, BackupSnapshot, Customer, RefreshToken, private_email_placeholder, utcnow
+from ..models import Agent, AuditLog, Customer, RefreshToken, private_email_placeholder, utcnow
 from ..services.audit_service import log_change
 from ..utils import (
     ValidationError,
@@ -40,7 +40,6 @@ def _delete_agent_records(agent):
                 db.session.delete(receipt)
             db.session.delete(payment)
         db.session.delete(customer)
-    BackupSnapshot.query.filter_by(agent_id=agent_id).delete(synchronize_session=False)
     RefreshToken.query.filter_by(agent_id=agent_id).delete(synchronize_session=False)
     AuditLog.query.filter_by(agent_id=agent_id).delete(synchronize_session=False)
     db.session.delete(agent)
@@ -211,7 +210,7 @@ def delete_account():
 
     Requires the password verification flag set by /account/verify plus an
     explicit typed confirmation, so no single accidental action can wipe the
-    account, its customers, collections, receipts, backups, or audit records.
+    account, its customers, collections, receipts, or audit records.
     """
     if not session.get("account_delete_verified"):
         return api_error("Verify your password before deleting the account.", 403)

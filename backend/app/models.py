@@ -156,41 +156,6 @@ class PaymentReceipt(db.Model, SerializerMixin):
         return data
 
 
-class BackupSnapshot(db.Model, SerializerMixin):
-    """An agent-private, internal restore point.
-
-    Snapshots are intentionally kept separate from financial records. They are
-    never exposed as files by the application UI and contain only the signed-in
-    agent's public profile, customers, installments, and receipt history.
-    """
-
-    __tablename__ = "backup_snapshots"
-    __table_args__ = (
-        db.UniqueConstraint("agent_id", "content_hash", name="uq_backup_snapshot_agent_content"),
-        db.Index("ix_backup_snapshots_agent_created", "agent_id", "created_at"),
-    )
-
-    id = db.Column(db.Integer, primary_key=True)
-    agent_id = db.Column(db.Integer, db.ForeignKey("agents.id"), nullable=False, index=True)
-    trigger = db.Column(db.String(20), nullable=False, default="automatic")
-    content_hash = db.Column(db.String(64), nullable=False)
-    payload = db.Column(db.Text, nullable=False)
-    customer_count = db.Column(db.Integer, nullable=False, default=0)
-    payment_count = db.Column(db.Integer, nullable=False, default=0)
-    receipt_count = db.Column(db.Integer, nullable=False, default=0)
-    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
-
-    def public_dict(self):
-        return {
-            "id": self.id,
-            "trigger": self.trigger,
-            "customer_count": self.customer_count,
-            "payment_count": self.payment_count,
-            "receipt_count": self.receipt_count,
-            "created_at": self.created_at.isoformat(),
-        }
-
-
 class RefreshToken(db.Model, SerializerMixin):
     """A long-lived device credential used only to restore a Flask session.
 

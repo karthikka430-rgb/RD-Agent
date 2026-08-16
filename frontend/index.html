@@ -110,10 +110,6 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             <span>Reports</span>
           </button>
-          <button class="nav-item" data-view="backups">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span>Backup & restore</span>
-          </button>
         </nav>
         <div class="sidebar-footer">
           <div class="secure-note">
@@ -342,65 +338,6 @@
               <table id="report-table"></table>
             </div>
           </section>
-        </section>
-
-        <!-- BACKUPS VIEW -->
-        <section id="view-backups" class="view">
-          <div class="section-title-wrap">
-            <p class="subtitle">Private backup copies are saved inside your RD Agent app when you are online.</p>
-          </div>
-
-          <button id="create-internal-backup" class="button primary wide btn-backup-now">Back up now</button>
-
-          <div class="backup-feature-cards">
-            <div class="feature-card">
-              <div class="card-icon-wrap teal">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-              </div>
-              <div class="card-content">
-                <h3>Automatic internal backup</h3>
-                <p id="backup-network-status" class="backup-status online">Online — automatic backups are enabled.</p>
-                <p class="card-desc">The app detects changes and safely saves a new copy. Nothing is downloaded to your device.</p>
-              </div>
-            </div>
-
-            <div class="feature-card">
-              <div class="card-icon-wrap blue">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-              </div>
-              <div class="card-content">
-                <h3>Restore safely</h3>
-                <p class="card-desc">Choose a saved copy below. Restore is merge-only: existing records are never overwritten or deleted.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="section-subheading">
-            <h3>Saved internal backups</h3>
-            <p>Restore points stored inside this application.</p>
-          </div>
-
-          <section class="panel">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>SAVED ON</th>
-                    <th>TYPE</th>
-                    <th>CUSTOMERS</th>
-                    <th>INSTALLMENTS</th>
-                    <th class="right">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody id="internal-backups-table"></tbody>
-              </table>
-            </div>
-          </section>
-
-          <div class="financial-protection-panel">
-            <strong>Financial data protection</strong>
-            <p>Automatic snapshots are agent-isolated and audit logged. They remain inside this application's database, so your customer accounts and paid receipts are never removed by restore.</p>
-          </div>
         </section>
 
         <!-- MOBILE BOTTOM NAVIGATION BAR -->

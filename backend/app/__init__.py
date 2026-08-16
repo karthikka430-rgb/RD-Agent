@@ -6,7 +6,6 @@ from flask import Flask, jsonify, request, send_from_directory, session
 from config import Config
 from .extensions import db
 from .routes.auth import auth_bp
-from .routes.backups import backups_bp
 from .routes.collections import collections_bp
 from .routes.customers import customers_bp
 from .routes.dashboard import dashboard_bp
@@ -51,7 +50,6 @@ def create_app(config_object=Config):
     app.register_blueprint(customers_bp, url_prefix="/api/customers")
     app.register_blueprint(payments_bp, url_prefix="/api/payments")
     app.register_blueprint(reports_bp, url_prefix="/api/reports")
-    app.register_blueprint(backups_bp, url_prefix="/api/backups")
     app.register_blueprint(collections_bp, url_prefix="/api/collections")
 
     @app.get("/api/health")

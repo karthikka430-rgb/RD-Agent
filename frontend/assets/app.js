@@ -7,7 +7,6 @@ const state = {
   customers: [],
   collectionRows: [],
   pendingCustomers: [],
-  backups: [],
   profile: null,
   report: null,
   profileShowAllReceipts: false,
@@ -137,19 +136,16 @@ async function api(url, options = {}) {
   }
   if (state.csrf && !['GET', 'HEAD'].includes((config.method || 'GET').toUpperCase())) config.headers['X-CSRF-Token'] = state.csrf;
   const isAuthCall = url.startsWith('/api/auth/login') || url.startsWith('/api/auth/register');
-  const isBackground = url.includes('/automatic');
-  
+
   let activeBtn = null;
-  if (!isBackground) {
-    const potentialBtn = document.activeElement && document.activeElement.tagName === 'BUTTON' ? document.activeElement : null;
-    // Do NOT apply loading-state to nav buttons (data-view) — they must remain visibly selected while the destination page loads.
-    activeBtn = (potentialBtn && potentialBtn.dataset.view !== undefined) ? null : potentialBtn;
-    if (activeBtn) {
-      activeBtn.disabled = true;
-      activeBtn.classList.add('loading-state');
-    }
-    document.body.classList.add('is-loading');
+  const potentialBtn = document.activeElement && document.activeElement.tagName === 'BUTTON' ? document.activeElement : null;
+  // Do NOT apply loading-state to nav buttons (data-view) — they must remain visibly selected while the destination page loads.
+  activeBtn = (potentialBtn && potentialBtn.dataset.view !== undefined) ? null : potentialBtn;
+  if (activeBtn) {
+    activeBtn.disabled = true;
+    activeBtn.classList.add('loading-state');
   }
+  document.body.classList.add('is-loading');
 
   let response;
   try {
@@ -162,12 +158,10 @@ async function api(url, options = {}) {
       }
     }
   } finally {
-    if (!isBackground) {
-      document.body.classList.remove('is-loading');
-      if (activeBtn) {
-        activeBtn.disabled = false;
-        activeBtn.classList.remove('loading-state');
-      }
+    document.body.classList.remove('is-loading');
+    if (activeBtn) {
+      activeBtn.disabled = false;
+      activeBtn.classList.remove('loading-state');
     }
   }
 
@@ -207,7 +201,6 @@ function showApp(agent, csrf) {
   profileControl.setAttribute('tabindex', '0');
   profileControl.setAttribute('aria-label', 'Open agent profile');
   setView('dashboard');
-  maybeAutomaticBackup();
 }
 function openSidebar() {
   $('#sidebar')?.classList.add('open');
@@ -256,7 +249,6 @@ function setView(view, pushHistory = true) {
     customers: ['CUSTOMER RECORDS', 'Customers'],
     pending: ['FOLLOW UP', 'Pending collections'],
     reports: ['ANALYTICS', 'Reports'],
-    backups: ['DATA SAFETY', 'Backup & restore'],
   }[view];
   if (info) {
     $('#page-kicker').textContent = info[0];
@@ -265,7 +257,7 @@ function setView(view, pushHistory = true) {
   if (pushHistory && view !== 'dashboard') {
     history.pushState({ view }, '');
   }
-  ({ dashboard: loadDashboard, collections: loadCollections, customers: loadCustomers, pending: loadPending, reports: loadReport, backups: loadBackups }[view])?.();
+  ({ dashboard: loadDashboard, collections: loadCollections, customers: loadCustomers, pending: loadPending, reports: loadReport }[view])?.();
 }
 
 async function loadDashboard() {
@@ -368,61 +360,6 @@ async function loadPending() {
   }
 }
 
-function backupDate(value) {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-}
-function setBackupNetworkStatus() {
-  const status = $('#backup-network-status');
-  if (!status) return;
-  if (navigator.onLine) {
-    status.textContent = 'Online — automatic backups are enabled.';
-    status.className = 'backup-status online';
-  } else {
-    status.textContent = 'Offline — the next automatic backup will run when internet returns.';
-    status.className = 'backup-status offline';
-  }
-}
-function renderBackups() {
-  const table = $('#internal-backups-table');
-  const summary = $('#backup-summary');
-  if (!table || !summary) return;
-  summary.textContent = `${state.backups.length} saved backup${state.backups.length === 1 ? '' : 's'}`;
-  table.innerHTML = state.backups.length
-    ? state.backups.map(backup => `<tr><td>${escapeHtml(backupDate(backup.created_at))}</td><td>${statusTag(backup.trigger)}</td><td>${backup.customer_count}</td><td>${backup.payment_count}</td><td>${backup.receipt_count}</td><td class="right"><div class="row-actions"><button data-restore-internal-backup="${backup.id}">Restore</button></div></td></tr>`).join('')
-    : emptyRow(6, 'No internal backup has been saved yet. Connect to the internet or select Back up now.');
-}
-async function maybeAutomaticBackup() {
-  if (!state.agent || !navigator.onLine) {
-    setBackupNetworkStatus();
-    return null;
-  }
-  try {
-    const result = await api('/api/backups/internal/automatic', { method: 'POST' });
-    return result;
-  } catch {
-    // Automatic backup will be retried on the next page load or online event.
-    return null;
-  } finally {
-    setBackupNetworkStatus();
-  }
-}
-async function loadBackups() {
-  try {
-    setBackupNetworkStatus();
-    let result = await api('/api/backups/internal');
-    state.backups = result.backups;
-    const automaticResult = await maybeAutomaticBackup();
-    if (automaticResult?.created) {
-      result = await api('/api/backups/internal');
-      state.backups = result.backups;
-    }
-    renderBackups();
-  } catch (error) {
-    toast(error.message, 'error');
-  }
-}
-
 function reportQuery(format) {
   const type = $('#report-type').value;
   const params = new URLSearchParams({ type });
@@ -496,7 +433,7 @@ function openDeleteCustomerModal(customer) {
   openModal('Delete customer', `Account ${customer.account_number} · ${customer.status}. This permanently removes the customer and all their records.`, `<div class="notice-panel"><strong>This action is permanent</strong><p>The customer profile, every payment, every receipt, and all related history will be permanently deleted. This cannot be undone.</p></div><form id="delete-customer-form" data-customer-id="${customer.id}"><label>Type DELETE to confirm deletion<input name="confirmation" required maxlength="20" placeholder="DELETE" autocomplete="off" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button danger" type="submit">Delete customer permanently</button></footer></form>`);
 }
 function openDeleteAccountModal() {
-  openModal('Delete agent account', 'This permanently removes your account and all your customer and financial records.', `<div class="notice-panel"><strong>Irreversible action</strong><p>Your account, every customer, every collection, every receipt, backup, and audit record will be permanently deleted. This cannot be undone.</p></div><form id="verify-delete-account-form"><label>Enter your password to continue<input name="password" type="password" required maxlength="128" placeholder="Your current password" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Verify password</button></footer></form><div id="delete-account-step-2" class="hidden"><form id="confirm-delete-account-form"><p class="muted">Type <strong>DELETE</strong> to permanently delete your account.</p><label>Confirmation<input name="confirmation" required maxlength="20" placeholder="DELETE" autocomplete="off" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button danger" type="submit">Permanently delete my account</button></footer></form></div>`);
+  openModal('Delete agent account', 'This permanently removes your account and all your customer and financial records.', `<div class="notice-panel"><strong>Irreversible action</strong><p>Your account, every customer, every collection, every receipt, and audit record will be permanently deleted. This cannot be undone.</p></div><form id="verify-delete-account-form"><label>Enter your password to continue<input name="password" type="password" required maxlength="128" placeholder="Your current password" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Verify password</button></footer></form><div id="delete-account-step-2" class="hidden"><form id="confirm-delete-account-form"><p class="muted">Type <strong>DELETE</strong> to permanently delete your account.</p><label>Confirmation<input name="confirmation" required maxlength="20" placeholder="DELETE" autocomplete="off" /></label><footer class="modal-footer"><button class="button secondary" type="button" data-close-modal>Cancel</button><button class="button danger" type="submit">Permanently delete my account</button></footer></form></div>`);
 }
 function openCollectionOffModal(customerId) {
   const item = state.collectionRows.find(row => row.customer.id === customerId);
@@ -722,7 +659,6 @@ async function submitCustomer(form) {
     closeModal();
     await loadCustomers();
     if (state.view === 'dashboard') loadDashboard();
-    maybeAutomaticBackup();
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -741,7 +677,6 @@ async function submitReceipt(form) {
     closeModal();
     await Promise.all([loadCollections(), loadDashboard()]);
     if (state.view === 'pending') loadPending();
-    maybeAutomaticBackup();
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -773,7 +708,6 @@ document.addEventListener('submit', async event => {
       toast('Customer permanently deleted.');
       closeModal();
       await Promise.all([loadCustomers(), loadDashboard()]);
-      maybeAutomaticBackup();
     } catch (error) {
       toast(error.message, 'error');
     }
@@ -813,7 +747,6 @@ document.addEventListener('submit', async event => {
       closeModal();
       await Promise.all([loadCollections(), loadDashboard()]);
       if (state.view === 'pending') loadPending();
-      maybeAutomaticBackup();
     } catch (error) {
       toast(error.message, 'error');
     }
@@ -827,21 +760,10 @@ document.addEventListener('submit', async event => {
       refreshAgentHeader();
       closeModal();
       toast('Profile updated and audit logged.');
-      maybeAutomaticBackup();
     } catch (error) {
       toast(error.message, 'error');
     }
     return;
-  }
-  if (form.id === 'restore-form') {
-    if (!window.confirm('Restore this backup? Existing financial data remains untouched and duplicate periods are skipped.')) return;
-    try {
-      const result = await api('/api/backups/restore', { method: 'POST', body: new FormData(form) });
-      toast(`Restore finished: ${result.imported_customers} customers and ${result.imported_payments} installments added.`);
-      form.reset();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
   }
 });
 
@@ -934,30 +856,6 @@ document.addEventListener('click', async event => {
   if (button.id === 'generate-report') return loadReport();
   if (button.dataset.export) {
     window.location.assign(`/api/reports/export?${reportQuery(button.dataset.export)}`);
-    return;
-  }
-  if (button.id === 'create-internal-backup') {
-    if (!navigator.onLine) return toast('Connect to the internet before creating an internal backup.', 'error');
-    try {
-      const result = await api('/api/backups/internal/manual', { method: 'POST' });
-      toast(result.message);
-      await loadBackups();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-    return;
-  }
-  if (button.dataset.restoreInternalBackup) {
-    const backup = state.backups.find(item => item.id === Number(button.dataset.restoreInternalBackup));
-    if (!backup) return;
-    if (!window.confirm(`Restore the backup saved on ${backupDate(backup.created_at)}? This safely adds missing records only; it never overwrites or deletes current financial records.`)) return;
-    try {
-      const result = await api(`/api/backups/internal/${backup.id}/restore`, { method: 'POST' });
-      toast(`Restore finished: ${result.imported_customers} customers and ${result.imported_payments} installments added.`);
-      await Promise.all([loadBackups(), loadDashboard(), loadCustomers()]);
-    } catch (error) {
-      toast(error.message, 'error');
-    }
     return;
   }
   if (button.dataset.toggleReceipts) {
@@ -1056,14 +954,6 @@ $('#report-search')?.addEventListener('input', () => {
 });
 
 $('#report-type').addEventListener('change', loadReport);
-window.addEventListener('online', async () => {
-  setBackupNetworkStatus();
-  const result = await maybeAutomaticBackup();
-  if (result?.created) {
-    toast('Internet connection restored. A new internal backup was saved.');
-    if (state.view === 'backups') loadBackups();
-  }
-});
 const overlay = $('#sidebar-overlay');
 if (overlay) {
   overlay.addEventListener('click', (e) => { e.preventDefault(); closeSidebar(); });

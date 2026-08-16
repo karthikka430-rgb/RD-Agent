@@ -239,7 +239,7 @@ def correct_collection(agent, payment, raw):
     The paid toggle stays final; this only adjusts the recorded amount and
     collection date of an already-collected installment. The previous value is
     preserved in the audit log, and the aggregate payment is kept equal to the
-    sum of its receipts so balances, reports, and backups stay consistent.
+    sum of its receipts so balances and reports stay consistent.
     """
     if payment.is_void:
         raise ValidationError("A voided collection cannot be edited.")

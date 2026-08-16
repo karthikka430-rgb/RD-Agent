@@ -73,14 +73,13 @@ def main():
         backup_path = backups_dir / f"pre-normalize-phones-{stamp}.sqlite3"
         backup_sqlite(database_url, backup_path)
 
-        from app.models import Agent, Customer, Payment, PaymentReceipt, BackupSnapshot, AuditLog, RefreshToken
+        from app.models import Agent, Customer, Payment, PaymentReceipt, AuditLog, RefreshToken
 
         counts = {
             "agents": Agent.query.count(),
             "customers": Customer.query.count(),
             "payments": Payment.query.count(),
             "payment_receipts": PaymentReceipt.query.count(),
-            "backup_snapshots": BackupSnapshot.query.count(),
             "audit_logs": AuditLog.query.count(),
             "refresh_tokens": RefreshToken.query.count(),
         }
@@ -95,7 +94,6 @@ def main():
         db.session.query(PaymentReceipt).delete()
         db.session.query(Payment).delete()
         db.session.query(Customer).delete()
-        db.session.query(BackupSnapshot).delete()
         db.session.query(AuditLog).delete()
         db.session.query(RefreshToken).delete()
         db.session.query(Agent).delete()
