@@ -1080,44 +1080,66 @@ function hideLoadingScreen() {
   }
 }
 
-async function checkBackendReadiness(maxRetries = 60, intervalMs = 1500) {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
+// The backend may still be waking up after a period of inactivity. The
+// loading screen stays visible while the saved session is restored in the
+// background using the existing session-refresh mechanism. This wait is
+// BOUNDED so the app can never be stuck on the loading screen: once the
+// backend responds (or the time runs out) the app always proceeds.
+const BOOT_WAIT_LIMIT_MS = 30000;
+const BOOT_WAIT_INTERVAL_MS = 1500;
+
+async function restoreSessionWithRetry(limitMs, intervalMs) {
+  const deadline = Date.now() + limitMs;
+  while (Date.now() < deadline) {
+    const token = await tokenStorage.get();
+    if (!token) return false;
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: token }),
       });
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
+      if (response.ok) {
         const data = await response.json();
-        if (response.ok) {
-          return { ready: true, authenticated: true, agent: data.agent, csrf: data.csrf_token };
-        }
-        if (response.status === 401) {
-          const token = await tokenStorage.get();
-          if (token) {
-            const restored = await attemptSessionRefresh();
-            if (restored) {
-              return { ready: true, authenticated: true, agent: state.agent, csrf: state.csrf };
-            }
-          }
-          return { ready: true, authenticated: false };
-        }
+        await tokenStorage.set(data.refresh_token);
+        state.csrf = data.csrf_token;
+        state.agent = data.agent;
+        return true;
       }
+      if (response.status === 401) {
+        // The backend answered and rejected the saved session — stop retrying.
+        await tokenStorage.clear();
+        return false;
+      }
+      // 5xx / wake-up page / anything else: the backend is still starting.
     } catch {
-      // Backend is starting up / connection pending
+      // Network not ready yet — retry after the interval.
     }
     await new Promise(resolve => setTimeout(resolve, intervalMs));
   }
-  return { ready: false, authenticated: false };
+  return false;
 }
 
 (async function boot() {
-  const result = await checkBackendReadiness();
-  if (result.authenticated && result.agent) {
-    showApp(result.agent, result.csrf);
-  } else {
+  const hasSavedSession = Boolean(await tokenStorage.get());
+
+  if (!hasSavedSession) {
+    // No saved session: the login screen is the destination.
     showAuth();
+    hideLoadingScreen();
+    return;
+  }
+
+  // A saved session exists. Render the frontend right away (it never waits
+  // for the backend to draw), then restore the session in the background
+  // while the loading screen is visible. As soon as the backend is reachable
+  // the app auto-enters the Dashboard; if the bounded wait expires the app
+  // simply lands on the login screen. The loading screen is always hidden.
+  showAuth();
+  const restored = await restoreSessionWithRetry(BOOT_WAIT_LIMIT_MS, BOOT_WAIT_INTERVAL_MS);
+  if (restored && state.agent) {
+    showApp(state.agent, state.csrf);
   }
   hideLoadingScreen();
 })();

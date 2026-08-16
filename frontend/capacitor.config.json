@@ -3,8 +3,7 @@
   "appName": "RD Agent",
   "webDir": "www",
   "server": {
-    "hostname": "rd-agent-4.onrender.com",
-    "androidScheme": "https",
+    "url": "https://rd-agent-4.onrender.com",
     "cleartext": false
   }
 }
