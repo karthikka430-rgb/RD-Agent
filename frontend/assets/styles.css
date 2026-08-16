@@ -928,6 +928,20 @@ tr:last-child td {
   border-bottom: none;
 }
 
+/* Customer rows are fully tappable — show pointer and a subtle highlight */
+tr[data-customer-row] {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+tr[data-customer-row]:hover {
+  background: var(--canvas);
+}
+
+tr[data-customer-row]:active {
+  background: var(--teal-pale);
+}
+
 td strong {
   font-weight: 700;
   color: var(--ink);

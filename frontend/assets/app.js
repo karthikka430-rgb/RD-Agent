@@ -141,7 +141,9 @@ async function api(url, options = {}) {
   
   let activeBtn = null;
   if (!isBackground) {
-    activeBtn = document.activeElement && document.activeElement.tagName === 'BUTTON' ? document.activeElement : null;
+    const potentialBtn = document.activeElement && document.activeElement.tagName === 'BUTTON' ? document.activeElement : null;
+    // Do NOT apply loading-state to nav buttons (data-view) — they must remain visibly selected while the destination page loads.
+    activeBtn = (potentialBtn && potentialBtn.dataset.view !== undefined) ? null : potentialBtn;
     if (activeBtn) {
       activeBtn.disabled = true;
       activeBtn.classList.add('loading-state');
@@ -332,7 +334,7 @@ async function loadCustomers() {
     const result = await api(`/api/customers/?${query}`);
     state.customers = result.customers;
     $('#customers-table').innerHTML = result.customers.length
-      ? result.customers.map(customer => `<tr><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${formatCalendarDate(customer.start_date)} - ${formatCalendarDate(customer.maturity_date)}<small>${escapeHtml(remainingDuration(customer.maturity_date))}</small></td><td>${statusTag(customer.status)}</td><td class="right"><div class="row-actions"><button data-customer-view="${customer.id}">View</button>${customer.status !== 'archived' ? `<button data-customer-edit="${customer.id}">Edit</button>` : ''}${customer.status === 'closed' ? `<button class="danger-action" data-customer-delete="${customer.id}">Delete</button>` : ''}</div></td></tr>`).join('')
+      ? result.customers.map(customer => `<tr data-customer-row="${customer.id}"><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${formatCalendarDate(customer.start_date)} - ${formatCalendarDate(customer.maturity_date)}<small>${escapeHtml(remainingDuration(customer.maturity_date))}</small></td><td>${statusTag(customer.status)}</td><td class="right"><div class="row-actions">${customer.status !== 'archived' ? `<button data-customer-edit="${customer.id}">Edit</button>` : ''}${customer.status === 'closed' ? `<button class="danger-action" data-customer-delete="${customer.id}">Delete</button>` : ''}</div></td></tr>`).join('')
       : emptyRow(6, 'No customers match this view.');
     const page = result.pagination;
     $('#customer-pagination').innerHTML = `<span>${page.total} record${page.total === 1 ? '' : 's'} · Page ${page.page} of ${Math.max(page.pages, 1)}</span><button data-page="${page.page - 1}" ${page.page <= 1 ? 'disabled' : ''}>Previous</button><button data-page="${page.page + 1}" ${page.page >= page.pages ? 'disabled' : ''}>Next</button>`;
@@ -874,6 +876,12 @@ document.addEventListener('click', async event => {
     }
     return;
   }
+  // Tapping anywhere on a customer row (outside the action buttons) opens the customer detail.
+  const customerRow = event.target.closest('[data-customer-row]');
+  if (customerRow && !event.target.closest('.row-actions')) {
+    return openCustomerProfile(Number(customerRow.dataset.customerRow));
+  }
+
   const button = event.target.closest('button');
   if (!button) return;
   if (button.dataset.authMode) return showAuth(button.dataset.authMode);
