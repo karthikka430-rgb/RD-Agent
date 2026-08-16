@@ -224,19 +224,23 @@ function toggleSidebar() {
   }
 }
 function handleBackAction() {
+  // 1. Close any open modal first (stays on same view)
   if ($('#modal-root')?.innerHTML.trim() !== '') {
     closeModal();
     return true;
   }
+  // 2. Close sidebar if open (stays on same view)
   const sidebar = $('#sidebar');
   if (sidebar && sidebar.classList.contains('open')) {
     closeSidebar();
     return true;
   }
+  // 3. Navigate to dashboard from any other view
   if (state.view && state.view !== 'dashboard') {
     setView('dashboard', false);
     return true;
   }
+  // 4. On dashboard, let the app exit (return false = system handles it)
   return false;
 }
 function setView(view, pushHistory = true) {
@@ -626,13 +630,17 @@ function renderCustomerProfile(result, showAllReceipts) {
   state.profileShowAllReceipts = showAllReceipts;
   const receipts = result.payments.flatMap(p => (p.receipts || []).map(r => ({ ...r, month: p.month, year: p.year })));
   const pendingInfo = calculatePendingMonths(customer, result.payments);
+
+  // Build advance paid section — only show if there is actual advance
+  const hasAdvance = Number(pendingInfo.advance) > 0;
+
   const bodyHtml = `
     <div class="customer-detail-cards">
       <div class="detail-card">
         <div class="detail-card-title">Account information</div>
         <div class="detail-grid-2">
           <div><div class="detail-item-label">Account number</div><div class="detail-item-value">${escapeHtml(customer.account_number)}</div></div>
-          <div><div class="detail-item-label">Monthly RD amount</div><div class="detail-item-value">${money(customer.monthly_rd_amount)} ${statusTag(customer.status)}</div></div>
+          <div><div class="detail-item-label">Monthly RD</div><div class="detail-item-value">${money(customer.monthly_rd_amount)} ${statusTag(customer.status)}</div></div>
         </div>
       </div>
       <div class="detail-card">
@@ -641,7 +649,7 @@ function renderCustomerProfile(result, showAllReceipts) {
           <div><div class="detail-item-label">Start date</div><div class="detail-item-value">${formatCalendarDate(customer.start_date)}</div></div>
           <div><div class="detail-item-label">Maturity date</div><div class="detail-item-value">${formatCalendarDate(customer.maturity_date)}</div></div>
         </div>
-        <div style="margin-top:0.5rem;"><div class="detail-item-label">Remaining term</div><div class="detail-item-value" style="font-size:0.8125rem;">${escapeHtml(remainingDuration(customer.maturity_date))}</div></div>
+        <div class="remaining-term-row"><span class="detail-item-label">Remaining term</span><span class="detail-item-value" style="font-size:0.8125rem;">${escapeHtml(remainingDuration(customer.maturity_date))}</span></div>
       </div>
       <div class="detail-card">
         <div class="detail-card-title">Collection summary</div>
@@ -652,20 +660,17 @@ function renderCustomerProfile(result, showAllReceipts) {
           </div>
           <div class="stat-tile">
             <div class="detail-item-label">Pending months</div>
-            <div class="detail-item-value ${pendingInfo.count > 0 ? 'text-amber' : 'text-green'}">
-              ${pendingInfo.count} month${pendingInfo.count === 1 ? '' : 's'}
-            </div>
+            <div class="detail-item-value ${pendingInfo.count > 0 ? 'text-amber' : 'text-green'}">${pendingInfo.count} month${pendingInfo.count === 1 ? '' : 's'}</div>
           </div>
           <div class="stat-tile">
             <div class="detail-item-label">Outstanding</div>
-            <div class="detail-item-value ${Number(pendingInfo.outstanding) > 0 ? 'text-amber' : ''}">
-              ${money(pendingInfo.outstanding)}
-            </div>
+            <div class="detail-item-value ${Number(pendingInfo.outstanding) > 0 ? 'text-amber' : ''}">${money(pendingInfo.outstanding)}</div>
           </div>
-          <div class="stat-tile">
+          <div class="stat-tile ${hasAdvance ? 'stat-tile-advance' : ''}">
             <div class="detail-item-label">Advance paid</div>
-            <div class="detail-item-value ${Number(pendingInfo.advance) > 0 ? 'text-green' : ''}">
-              ${money(pendingInfo.advance)} ${pendingInfo.advanceMonths > 0 ? `<small style="font-size:0.7rem;color:var(--green-text);font-weight:700;">(${pendingInfo.advanceMonths}m)</small>` : ''}
+            <div class="detail-item-value ${hasAdvance ? 'text-green' : ''}">
+              ${money(pendingInfo.advance)}
+              ${pendingInfo.advanceMonths > 0 ? `<small style="font-size:0.68rem;color:var(--green-text);font-weight:700;">(${pendingInfo.advanceMonths}m ahead)</small>` : ''}
             </div>
           </div>
         </div>
@@ -677,7 +682,7 @@ function renderCustomerProfile(result, showAllReceipts) {
         </div>
         ${receipts.length
           ? `<div class="receipts-scroll-list">${(showAllReceipts ? receipts : receipts.slice(0, 3)).map(r =>
-              `<div class="receipt-item-row"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small>${escapeHtml(r.receipt_number)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`
+              `<div class="receipt-item-row"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small>${escapeHtml(r.receipt_number)} · ${period(r.month, r.year)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`
             ).join('')}</div>`
           : '<div class="muted font-sm">No receipts yet</div>'
         }
@@ -1005,11 +1010,22 @@ document.addEventListener('input', event => {
     if (matInput && (!matInput.value || matInput.dataset.autoFilled)) {
       const val = event.target.value.trim();
       const parts = val.split(/[\/\-\.]/);
-      if (parts.length === 3 && parts[2].length === 4) {
-        const d = parts[0].padStart(2, '0');
-        const m = parts[1].padStart(2, '0');
-        const y = Number(parts[2]);
-        if (!Number.isNaN(y)) {
+      if (parts.length === 3) {
+        let d, m, y;
+        if (parts[0].length === 4) {
+          // YYYY-MM-DD format typed by user → normalise to DD/MM/YYYY
+          y = Number(parts[0]);
+          m = parts[1].padStart(2, '0');
+          d = parts[2].padStart(2, '0');
+          // Rewrite the start_date field itself to DD/MM/YYYY
+          event.target.value = `${d}/${m}/${y}`;
+        } else if (parts[2].length === 4) {
+          // DD/MM/YYYY format
+          d = parts[0].padStart(2, '0');
+          m = parts[1].padStart(2, '0');
+          y = Number(parts[2]);
+        }
+        if (d && m && y && !Number.isNaN(y)) {
           matInput.value = `${d}/${m}/${y + 5}`;
           matInput.dataset.autoFilled = 'true';
         }

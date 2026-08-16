@@ -582,7 +582,7 @@ input:focus, select:focus, textarea:focus {
   height: auto;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  padding: 40px 1rem 0.65rem 1rem;
+  padding: max(20px, env(safe-area-inset-top, 12px)) 1rem 0.65rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -675,7 +675,7 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0.4rem 0.5rem 28px 0.5rem;
+  padding: 0.4rem 0.5rem max(12px, env(safe-area-inset-bottom, 8px)) 0.5rem;
   z-index: 40;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
 }
@@ -1477,6 +1477,12 @@ td small {
   line-height: 1.2;
 }
 
+/* Advance paid tile highlight inside collection summary */
+.stat-tile-advance {
+  background: var(--green-bg);
+  border-color: var(--green-border);
+}
+
 .receipts-scroll-list {
   display: grid;
   gap: 0.35rem;
@@ -1518,6 +1524,77 @@ td small {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+/* ==========================================================================
+   ADVANCE PAID BADGE & CARD
+   ========================================================================== */
+/* Advance badge in the customer list table row */
+.advance-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--green-bg);
+  color: var(--green-text);
+  border: 1px solid var(--green-border);
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.1rem 0.45rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* Advance paid dedicated card in customer profile */
+.advance-card {
+  border-color: var(--green-border);
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+}
+
+.advance-card-title {
+  color: var(--green-text) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.advance-card-title svg {
+  stroke: var(--green-text);
+  flex-shrink: 0;
+}
+
+.advance-info-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
+.advance-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+/* Remaining term inline layout inside RD term card */
+.remaining-term-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.remaining-term-row .detail-item-label {
+  flex-shrink: 0;
+}
+
+.remaining-term-row .detail-item-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 0;
 }
 
 /* TOASTS & LOADING */
