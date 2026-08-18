@@ -76,6 +76,30 @@ function toast(message, type = '') {
   setTimeout(() => node.remove(), 4200);
 }
 
+function getTheme() {
+  try {
+    return localStorage.getItem('rdagent_theme') || 'light';
+  } catch {
+    return 'light';
+  }
+}
+
+function setTheme(theme) {
+  const activeTheme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', activeTheme);
+  document.body.setAttribute('data-theme', activeTheme);
+  try {
+    localStorage.setItem('rdagent_theme', activeTheme);
+  } catch { /* ignore */ }
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) {
+    themeMeta.setAttribute('content', activeTheme === 'dark' ? '#0F172A' : '#05685E');
+  }
+}
+
+// Initialise theme on script load (light mode is default)
+setTheme(getTheme());
+
 const REFRESH_TOKEN_KEY = 'rdagent_refresh_token';
 const tokenStorage = {
   async get() {
@@ -440,6 +464,12 @@ function openAgentProfile() {
 
   const modalContent = `
     <div class="profile-modal-header">
+      <div class="profile-modal-topbar">
+        <h3 class="profile-modal-title">My profile</h3>
+        <button class="profile-settings-btn" type="button" data-open-settings aria-label="Open settings" title="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
       <div class="profile-hex-avatar">
         <span class="profile-hex-initials">${escapeHtml(initial)}</span>
       </div>
@@ -514,6 +544,63 @@ function openAgentProfile() {
       showAuth();
     }, { once: true });
   }
+}
+
+function openSettingsModal() {
+  const currentTheme = getTheme();
+  const bodyHtml = `
+    <div class="settings-section">
+      <h4 class="settings-section-title">Theme & Appearance</h4>
+      <p class="settings-section-desc">Choose your preferred workspace color theme.</p>
+      
+      <div class="theme-options-grid">
+        <label class="theme-option-card ${currentTheme === 'light' ? 'active' : ''}">
+          <input type="radio" name="app_theme" value="light" ${currentTheme === 'light' ? 'checked' : ''} />
+          <div class="theme-option-icon light-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><line x1="12" y1="1" x2="12" y2="2"/><line x1="12" y1="8" x2="12" y2="9"/><line x1="4.93" y1="4.93" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.07" y2="19.07"/><line x1="1" y1="12" x2="2" y2="12"/><line x1="22" y1="12" x2="23" y2="12"/><line x1="4.93" y1="19.07" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.07" y2="4.93"/></svg>
+          </div>
+          <div class="theme-option-info">
+            <strong>Light mode</strong>
+            <small>Default appearance</small>
+          </div>
+          <span class="theme-check-badge">✓</span>
+        </label>
+
+        <label class="theme-option-card ${currentTheme === 'dark' ? 'active' : ''}">
+          <input type="radio" name="app_theme" value="dark" ${currentTheme === 'dark' ? 'checked' : ''} />
+          <div class="theme-option-icon dark-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </div>
+          <div class="theme-option-info">
+            <strong>Dark mode</strong>
+            <small>High contrast dark theme</small>
+          </div>
+          <span class="theme-check-badge">✓</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section" style="margin-top: 1.25rem;">
+      <h4 class="settings-section-title">Account settings</h4>
+      <div class="settings-action-rows">
+        <button type="button" class="settings-action-row" data-edit-agent-profile>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Edit profile details</span>
+          </div>
+          <span>›</span>
+        </button>
+        <button type="button" class="settings-action-row danger-text" data-delete-agent-account>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Delete account</span>
+          </div>
+          <span>›</span>
+        </button>
+      </div>
+    </div>
+  `;
+  openModal('Settings', 'Appearance and workspace options', bodyHtml, '<button class="button primary" type="button" data-close-modal>Done</button>');
 }
 function openAgentProfileEdit() {
   if (!state.agent) return;
@@ -907,7 +994,7 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('button');
   if (!button) return;
   if (button.dataset.authMode) return showAuth(button.dataset.authMode);
-  if (button.id === 'settings-nav-btn') { closeSidebar(); return openAgentProfile(); }
+  if (button.id === 'settings-nav-btn' || button.dataset.openSettings !== undefined) { closeSidebar(); return openSettingsModal(); }
   if (button.dataset.view) return setView(button.dataset.view);
   if (button.dataset.nav) return setView(button.dataset.nav);
   if (button.id === 'menu-button') return toggleSidebar();
@@ -976,6 +1063,15 @@ document.addEventListener('click', async event => {
 });
 
 document.addEventListener('change', event => {
+  if (event.target.name === 'app_theme') {
+    setTheme(event.target.value);
+    $$('.theme-option-card').forEach(card => {
+      const radio = card.querySelector('input[type="radio"]');
+      card.classList.toggle('active', radio && radio.checked);
+    });
+    toast(event.target.value === 'dark' ? 'Dark theme enabled.' : 'Light mode enabled.');
+    return;
+  }
   const checkbox = event.target;
   if (!checkbox.matches('[data-collection-toggle]')) return;
   if (!checkbox.checked) return;

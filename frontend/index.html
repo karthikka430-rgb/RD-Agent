@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#05685E" />
     <title>RD Agent Management System</title>
-    <link rel="stylesheet" href="/assets/styles.css?v=20260818-v9-ui-redesign" />
-    <link rel="stylesheet" href="/assets/collection-register.css?v=20260818-v9-ui-redesign" />
-    <link rel="stylesheet" href="/assets/agent-profile.css?v=20260818-v9-ui-redesign" />
-    <link rel="stylesheet" href="/assets/partial-payments.css?v=20260818-v9-ui-redesign" />
+    <link rel="stylesheet" href="/assets/styles.css?v=20260818-v12-dark-contrast" />
+    <link rel="stylesheet" href="/assets/collection-register.css?v=20260818-v12-dark-contrast" />
+    <link rel="stylesheet" href="/assets/agent-profile.css?v=20260818-v12-dark-contrast" />
+    <link rel="stylesheet" href="/assets/partial-payments.css?v=20260818-v12-dark-contrast" />
   </head>
   <body>
     <!-- RD-AGENT CUSTOM BACKEND WAKEUP LOADING SCREEN -->
@@ -136,8 +136,15 @@
             <label>Full name<input name="name" required maxlength="120" placeholder="Agent name" /></label>
             <label>Phone<input name="phone" required maxlength="30" inputmode="tel" placeholder="Enter phone number" /></label>
           </div>
-          <label>Email <span class="optional-label">(optional)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com" /></label>
-          <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="12" placeholder="At least 12 characters" /></label>
+          <label>Password
+            <div class="password-field">
+              <input name="password" type="password" autocomplete="new-password" required minlength="12" placeholder="At least 12 characters" />
+              <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" aria-pressed="false">
+                <svg class="icon-eye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="icon-eye-off hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </label>
           <button class="button primary wide" type="submit">Create account</button>
           <p class="auth-switch">Already registered? <button type="button" class="link-button" data-auth-mode="login">Sign in instead</button></p>
         </form>
@@ -451,6 +458,6 @@
 
     <div id="modal-root"></div>
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
-    <script src="/assets/app.js?v=20260818-v9-ui-redesign"></script>
+    <script src="/assets/app.js?v=20260818-v12-dark-contrast"></script>
   </body>
 </html>
