@@ -234,11 +234,26 @@ button {
 }
 
 .auth-banner {
-  background: linear-gradient(135deg, #B2DFDB 0%, #E0F2F1 50%, #F5F7F8 100%);
-  padding: 3rem 1.5rem 2rem;
+  background: linear-gradient(160deg, #05685E 0%, #0a8a7e 35%, #B2DFDB 70%, #E8F5F3 100%);
+  padding: 2rem 1.5rem 0;
   text-align: center;
   border-bottom-left-radius: 2rem;
   border-bottom-right-radius: 2rem;
+  overflow: hidden;
+}
+
+.auth-illustration {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.building-svg {
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  display: block;
 }
 
 .brand {
@@ -267,9 +282,83 @@ button {
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--teal);
+  color: rgba(255,255,255,0.9);
   margin: 0.5rem 0 0;
   text-transform: uppercase;
+}
+
+.brand-light {
+  color: #fff !important;
+}
+
+.brand-light .brand-mark {
+  background: rgba(255,255,255,0.22);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  color: #fff;
+}
+
+/* Remember me + forgot password row */
+.login-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -0.25rem 0 1rem;
+}
+
+.remember-me-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  margin: 0;
+  user-select: none;
+}
+
+.remember-me-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.custom-checkbox-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.custom-checkbox {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 0.3rem;
+  border: 1.5px solid var(--teal-border);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.remember-me-label input:checked + .custom-checkbox {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.custom-checkbox svg {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.remember-me-label input:checked + .custom-checkbox svg {
+  opacity: 1;
+}
+
+.forgot-btn {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--teal);
 }
 
 .auth-card-wrap {
@@ -466,6 +555,88 @@ input:focus, select:focus, textarea:focus {
   flex-direction: column;
 }
 
+/* Dark teal sidebar variant */
+.sidebar-dark {
+  background: var(--teal);
+  border-right: none;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 0.5rem 1.75rem;
+}
+
+.sidebar-dark .brand-mark {
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  color: #fff;
+  border-radius: 0.6rem;
+  height: 2.1rem;
+  width: 2.1rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.sidebar-brand-text {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.15);
+  margin: 0.75rem 0;
+}
+
+/* Secure note dark variant */
+.secure-note-dark {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 0.5rem;
+}
+
+.secure-note-dark svg {
+  stroke: rgba(255,255,255,0.8);
+  flex-shrink: 0;
+}
+
+.secure-note-dark strong {
+  display: block;
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.secure-note-dark small {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.7rem;
+}
+
+/* Sign out button in dark sidebar */
+.nav-item-signout {
+  color: rgba(255,255,255,0.75) !important;
+  width: 100%;
+}
+
+.nav-item-signout:hover {
+  background: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+}
+
 @media (max-width: 880px) {
   .sidebar {
     position: fixed;
@@ -512,10 +683,6 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-.sidebar .brand {
-  padding: 0 0.5rem 1.5rem;
-}
-
 .sidebar-label {
   font-size: 0.6875rem;
   font-weight: 800;
@@ -524,9 +691,13 @@ input:focus, select:focus, textarea:focus {
   padding: 0 0.5rem 0.5rem;
 }
 
+.sidebar-dark .sidebar-label {
+  color: rgba(255,255,255,0.55);
+}
+
 .sidebar nav {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
 .nav-item {
@@ -541,11 +712,28 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .nav-item.active {
   background: var(--teal-pale);
   color: var(--teal);
+  font-weight: 700;
+}
+
+/* Dark sidebar nav item overrides */
+.sidebar-dark .nav-item {
+  color: rgba(255,255,255,0.75);
+}
+
+.sidebar-dark .nav-item:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.sidebar-dark .nav-item.active {
+  background: rgba(255,255,255,0.95);
+  color: var(--teal-dark);
   font-weight: 700;
 }
 
@@ -569,6 +757,71 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   margin-top: 0.75rem;
   color: var(--muted);
+}
+
+/* ============================================================
+   CUSTOMERS SLIM TABLE (3 cols + chevron)
+   ============================================================ */
+.customers-slim-table td:last-child,
+.customers-slim-table th:last-child {
+  text-align: right;
+  width: 32px;
+  padding-right: 0.75rem;
+}
+
+.row-chevron {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ============================================================
+   PENDING SLIM TABLE — phone icon action buttons
+   ============================================================ */
+.pending-slim-table th:last-child,
+.pending-slim-table td:last-child {
+  text-align: right;
+}
+
+.pending-contact-btns {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.pending-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--teal-border);
+  background: var(--teal-pale);
+  color: var(--teal);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.pending-icon-btn:hover,
+.pending-icon-btn:active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+}
+
+.pending-icon-btn.msg-btn {
+  background: var(--green-bg);
+  border-color: var(--green-border);
+  color: var(--green-text);
+}
+
+.pending-icon-btn.msg-btn:hover,
+.pending-icon-btn.msg-btn:active {
+  background: var(--green-text);
+  border-color: var(--green-text);
+  color: #fff;
 }
 
 /* TOPBAR */
@@ -1253,6 +1506,41 @@ td small {
   place-items: center;
   color: var(--muted);
   font-size: 0.875rem;
+}
+
+/* -------------------------------------------------------
+   Profile modal — full-bleed teal header, no inner padding
+   ------------------------------------------------------- */
+.profile-modal {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-modal .modal-body {
+  padding: 0.875rem 1.25rem 1.25rem;
+}
+
+.profile-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  border: 0;
+  background: rgba(255,255,255,0.18);
+  border-radius: 50%;
+  width: 1.85rem;
+  height: 1.85rem;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 0.875rem;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.15s ease;
+}
+
+.profile-modal-close:hover {
+  background: rgba(255,255,255,0.32);
 }
 
 .modal-body {

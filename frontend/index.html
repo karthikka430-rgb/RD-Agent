@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#05685E" />
     <title>RD Agent Management System</title>
-    <link rel="stylesheet" href="/assets/styles.css?v=20260816-v8-advance-insummary" />
-    <link rel="stylesheet" href="/assets/collection-register.css?v=20260816-v8-advance-insummary" />
-    <link rel="stylesheet" href="/assets/agent-profile.css?v=20260816-v8-advance-insummary" />
-    <link rel="stylesheet" href="/assets/partial-payments.css?v=20260816-v8-advance-insummary" />
+    <link rel="stylesheet" href="/assets/styles.css?v=20260818-v9-ui-redesign" />
+    <link rel="stylesheet" href="/assets/collection-register.css?v=20260818-v9-ui-redesign" />
+    <link rel="stylesheet" href="/assets/agent-profile.css?v=20260818-v9-ui-redesign" />
+    <link rel="stylesheet" href="/assets/partial-payments.css?v=20260818-v9-ui-redesign" />
   </head>
   <body>
     <!-- RD-AGENT CUSTOM BACKEND WAKEUP LOADING SCREEN -->
@@ -33,9 +33,59 @@
     </div>
 
     <div id="auth-shell" class="auth-shell">
+      <!-- Auth banner with post office illustration -->
       <div class="auth-banner">
         <div class="brand brand-light"><span class="brand-mark">₹</span> RD Agent</div>
         <p class="banner-sub">POST OFFICE RECURRING DEPOSITS</p>
+        <!-- Post office building illustration -->
+        <div class="auth-illustration" aria-hidden="true">
+          <svg viewBox="0 0 320 130" fill="none" xmlns="http://www.w3.org/2000/svg" class="building-svg">
+            <!-- Clouds -->
+            <ellipse cx="48" cy="28" rx="22" ry="11" fill="white" fill-opacity="0.55"/>
+            <ellipse cx="66" cy="24" rx="16" ry="9" fill="white" fill-opacity="0.55"/>
+            <ellipse cx="32" cy="30" rx="14" ry="8" fill="white" fill-opacity="0.45"/>
+            <ellipse cx="258" cy="22" rx="20" ry="10" fill="white" fill-opacity="0.55"/>
+            <ellipse cx="275" cy="18" rx="15" ry="8" fill="white" fill-opacity="0.50"/>
+            <ellipse cx="244" cy="24" rx="13" ry="7" fill="white" fill-opacity="0.40"/>
+            <!-- Ground -->
+            <rect x="0" y="118" width="320" height="12" rx="6" fill="white" fill-opacity="0.3"/>
+            <!-- Main building body -->
+            <rect x="80" y="68" width="160" height="52" rx="3" fill="white" fill-opacity="0.92"/>
+            <!-- Roof / Pediment -->
+            <polygon points="80,68 160,36 240,68" fill="white" fill-opacity="0.92"/>
+            <!-- Pediment triangle highlight -->
+            <polygon points="115,68 160,48 205,68" fill="#05685E" fill-opacity="0.18"/>
+            <!-- Columns -->
+            <rect x="102" y="68" width="10" height="52" rx="2" fill="#05685E" fill-opacity="0.20"/>
+            <rect x="126" y="68" width="10" height="52" rx="2" fill="#05685E" fill-opacity="0.20"/>
+            <rect x="150" y="68" width="10" height="52" rx="2" fill="#05685E" fill-opacity="0.20"/>
+            <rect x="174" y="68" width="10" height="52" rx="2" fill="#05685E" fill-opacity="0.20"/>
+            <rect x="198" y="68" width="10" height="52" rx="2" fill="#05685E" fill-opacity="0.20"/>
+            <rect x="222" y="68" width="10" height="52" rx="2" fill="#05685E" fill-opacity="0.20"/>
+            <!-- Door -->
+            <rect x="145" y="90" width="30" height="30" rx="3" fill="#05685E" fill-opacity="0.55"/>
+            <rect x="150" y="93" width="10" height="18" rx="2" fill="white" fill-opacity="0.6"/>
+            <rect x="163" y="93" width="10" height="18" rx="2" fill="white" fill-opacity="0.6"/>
+            <!-- Windows -->
+            <rect x="96" y="75" width="22" height="18" rx="2" fill="#05685E" fill-opacity="0.25"/>
+            <rect x="99" y="78" width="7" height="12" rx="1" fill="white" fill-opacity="0.7"/>
+            <rect x="108" y="78" width="7" height="12" rx="1" fill="white" fill-opacity="0.7"/>
+            <rect x="202" y="75" width="22" height="18" rx="2" fill="#05685E" fill-opacity="0.25"/>
+            <rect x="205" y="78" width="7" height="12" rx="1" fill="white" fill-opacity="0.7"/>
+            <rect x="214" y="78" width="7" height="12" rx="1" fill="white" fill-opacity="0.7"/>
+            <!-- Flag pole -->
+            <line x1="160" y1="36" x2="160" y2="16" stroke="white" stroke-width="2" stroke-opacity="0.9"/>
+            <!-- Flag -->
+            <polygon points="160,16 178,21 160,26" fill="white" fill-opacity="0.9"/>
+            <!-- Trees -->
+            <rect x="56" y="96" width="8" height="22" rx="2" fill="#05685E" fill-opacity="0.5"/>
+            <ellipse cx="60" cy="90" rx="15" ry="18" fill="#05685E" fill-opacity="0.45"/>
+            <ellipse cx="60" cy="82" rx="11" ry="14" fill="#05685E" fill-opacity="0.55"/>
+            <rect x="256" y="96" width="8" height="22" rx="2" fill="#05685E" fill-opacity="0.5"/>
+            <ellipse cx="260" cy="90" rx="15" ry="18" fill="#05685E" fill-opacity="0.45"/>
+            <ellipse cx="260" cy="82" rx="11" ry="14" fill="#05685E" fill-opacity="0.55"/>
+          </svg>
+        </div>
       </div>
       <section class="auth-card-wrap">
         <form id="login-form" class="auth-card" novalidate>
@@ -59,6 +109,19 @@
               </button>
             </div>
           </label>
+          <!-- Remember me + Forgot password row -->
+          <div class="login-options-row">
+            <label class="remember-me-label">
+              <span class="custom-checkbox-wrap">
+                <input type="checkbox" name="remember_me" id="remember-me-check" />
+                <span class="custom-checkbox">
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="2 6 5 9 10 3"/></svg>
+                </span>
+              </span>
+              Remember me
+            </label>
+            <button type="button" class="link-button forgot-btn">Forgot password?</button>
+          </div>
           <button class="button primary wide" type="submit">Sign in</button>
           <p class="auth-switch">New RD agent? <button type="button" class="link-button" data-auth-mode="register">Create your account</button></p>
         </form>
@@ -86,8 +149,12 @@
     </div>
 
     <div id="app-shell" class="app-shell hidden">
-      <aside class="sidebar" id="sidebar">
-        <div class="brand"><span class="brand-mark">₹</span> RD Agent</div>
+      <!-- DARK SIDEBAR -->
+      <aside class="sidebar sidebar-dark" id="sidebar">
+        <div class="sidebar-brand">
+          <span class="brand-mark">₹</span>
+          <span class="sidebar-brand-text">RD Agent</span>
+        </div>
         <p class="sidebar-label">WORKSPACE</p>
         <nav id="primary-nav" aria-label="Primary navigation">
           <button class="nav-item active" data-view="dashboard">
@@ -111,12 +178,30 @@
             <span>Reports</span>
           </button>
         </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Settings (placeholder) -->
+        <nav aria-label="Settings navigation">
+          <button class="nav-item" id="settings-nav-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Settings</span>
+          </button>
+        </nav>
+
         <div class="sidebar-footer">
-          <div class="secure-note">
+          <!-- Secure records card -->
+          <div class="secure-note-dark">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <div><strong>Secure records</strong><small>Changes are audit logged</small></div>
+            <div>
+              <strong>Secure records</strong>
+              <small>Changes are audit logged</small>
+            </div>
           </div>
-          <button id="logout-button" class="nav-item logout"><span>⇥</span> Sign out</button>
+          <button id="logout-button" class="nav-item nav-item-signout">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign out</span>
+          </button>
         </div>
       </aside>
       <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -242,15 +327,13 @@
               </select>
             </div>
             <div class="table-wrap">
-              <table>
+              <table class="customers-slim-table">
                 <thead>
                   <tr>
                     <th>CUSTOMER</th>
                     <th>ACC. NO.</th>
                     <th>MONTHLY RD</th>
-                    <th>DATE RANGE</th>
-                    <th>STATUS</th>
-                    <th class="right">ACTIONS</th>
+                    <th style="width: 32px;"></th>
                   </tr>
                 </thead>
                 <tbody id="customers-table"></tbody>
@@ -288,13 +371,13 @@
 
           <section class="panel">
             <div class="table-wrap">
-              <table>
+              <table class="pending-slim-table">
                 <thead>
                   <tr>
                     <th>CUSTOMER</th>
                     <th>ACC. NO.</th>
                     <th>PHONE</th>
-                    <th class="right">ACTION</th>
+                    <th class="right">CONTACT</th>
                   </tr>
                 </thead>
                 <tbody id="pending-table"></tbody>
@@ -368,6 +451,6 @@
 
     <div id="modal-root"></div>
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
-    <script src="/assets/app.js?v=20260816-v8-advance-insummary"></script>
+    <script src="/assets/app.js?v=20260818-v9-ui-redesign"></script>
   </body>
 </html>

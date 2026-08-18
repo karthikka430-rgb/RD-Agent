@@ -1,3 +1,6 @@
+/* =====================================================
+   AGENT MENU (topbar click target)
+   ===================================================== */
 .agent-menu {
   cursor: pointer;
   border-radius: var(--radius);
@@ -13,6 +16,179 @@
   outline: none;
 }
 
+/* =====================================================
+   AGENT PROFILE MODAL — header card
+   ===================================================== */
+.profile-modal-header {
+  background: linear-gradient(160deg, var(--teal) 0%, #0a8a7e 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 2rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+/* Hexagon avatar */
+.profile-hex-avatar {
+  width: 5rem;
+  height: 5rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-hex-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.45);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+
+.profile-hex-initials {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-agent-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.profile-agent-role {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.75);
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* =====================================================
+   PROFILE DETAIL ROWS (icon + label + value)
+   ===================================================== */
+.profile-detail-list {
+  padding: 0.5rem 0;
+  display: grid;
+  gap: 0;
+}
+
+.profile-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-detail-row:last-child {
+  border-bottom: none;
+}
+
+.profile-detail-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--teal-pale);
+  border: 1px solid var(--teal-border);
+  color: var(--teal);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.profile-detail-info {
+  flex: 1;
+}
+
+.profile-detail-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin: 0 0 0.1rem;
+}
+
+.profile-detail-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  word-break: break-all;
+}
+
+/* =====================================================
+   PROFILE ACTIONS (buttons + sign out)
+   ===================================================== */
+.profile-actions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.profile-action-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.profile-action-btn:hover {
+  background: var(--canvas);
+}
+
+.profile-action-btn.danger {
+  background: #D32F2F;
+  border-color: #D32F2F;
+  color: #fff;
+}
+
+.profile-action-btn.danger:hover {
+  background: #B71C1C;
+  border-color: #B71C1C;
+}
+
+.profile-signout-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 0 0;
+  background: none;
+  border: none;
+  width: 100%;
+}
+
+.profile-signout-row:hover {
+  color: var(--ink);
+}
+
+/* =====================================================
+   LEGACY STYLES (keep for agent-profile-form modal)
+   ===================================================== */
 .agent-profile-card {
   display: flex;
   align-items: center;

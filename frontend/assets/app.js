@@ -326,8 +326,13 @@ async function loadCustomers() {
     const result = await api(`/api/customers/?${query}`);
     state.customers = result.customers;
     $('#customers-table').innerHTML = result.customers.length
-      ? result.customers.map(customer => `<tr data-customer-row="${customer.id}"><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${formatCalendarDate(customer.start_date)} - ${formatCalendarDate(customer.maturity_date)}<small>${escapeHtml(remainingDuration(customer.maturity_date))}</small></td><td>${statusTag(customer.status)}</td><td class="right"><div class="row-actions">${customer.status !== 'archived' ? `<button data-customer-edit="${customer.id}">Edit</button>` : ''}${customer.status === 'closed' ? `<button class="danger-action" data-customer-delete="${customer.id}">Delete</button>` : ''}</div></td></tr>`).join('')
-      : emptyRow(6, 'No customers match this view.');
+      ? result.customers.map(customer => `<tr data-customer-row="${customer.id}">
+          <td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td>
+          <td>${escapeHtml(customer.account_number)}</td>
+          <td>${money(customer.monthly_rd_amount)}</td>
+          <td class="right"><span class="row-chevron">›</span></td>
+        </tr>`).join('')
+      : emptyRow(4, 'No customers match this view.');
     const page = result.pagination;
     $('#customer-pagination').innerHTML = `<span>${page.total} record${page.total === 1 ? '' : 's'} · Page ${page.page} of ${Math.max(page.pages, 1)}</span><button data-page="${page.page - 1}" ${page.page <= 1 ? 'disabled' : ''}>Previous</button><button data-page="${page.page + 1}" ${page.page >= page.pages ? 'disabled' : ''}>Next</button>`;
   } catch (error) {
@@ -352,9 +357,24 @@ async function loadPending() {
     $('#pending-table').innerHTML = result.customers.length
       ? result.customers.map(item => {
         const customer = item.customer;
-        return `<tr><td><strong>${escapeHtml(customer.customer_name)}</strong></td><td>${escapeHtml(customer.account_number)}</td><td>${escapeHtml(customer.phone)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${money(item.paid_amount)}</td><td><strong>${money(item.remaining_amount)}</strong></td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions"><button data-reminder="${customer.id}">Copy reminder</button><button data-pending-receipt="${customer.id}">Record amount</button></div></td></tr>`;
+        const phoneEncoded = encodeURIComponent(customer.phone);
+        return `<tr>
+          <td><strong>${escapeHtml(customer.customer_name)}</strong></td>
+          <td>${escapeHtml(customer.account_number)}</td>
+          <td>${escapeHtml(customer.phone)}</td>
+          <td>
+            <div class="pending-contact-btns">
+              <a href="tel:${escapeHtml(customer.phone)}" class="pending-icon-btn" aria-label="Call ${escapeHtml(customer.customer_name)}" title="Call customer">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </a>
+              <button class="pending-icon-btn msg-btn" data-reminder="${customer.id}" aria-label="Copy reminder for ${escapeHtml(customer.customer_name)}" title="Copy reminder message">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
       }).join('')
-      : emptyRow(8, 'All due active customers have fully paid for this month.');
+      : emptyRow(4, 'All due active customers have fully paid for this month.');
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -413,7 +433,87 @@ function closeModal() {
 function openAgentProfile() {
   if (!state.agent) return;
   const agent = state.agent;
-  openModal('Agent profile', 'Your signed-in RD collection account.', `<div class="agent-profile-card"><div class="profile-avatar">${escapeHtml(agent.name.slice(0, 1).toUpperCase())}</div><div><h4>${escapeHtml(agent.name)}</h4><p>RD Agent</p></div></div><div class="profile-summary agent-profile-details"><div>Phone number<strong>${escapeHtml(agent.phone)}</strong></div><div>Email address<strong>${escapeHtml(agent.email || 'Not provided')}</strong></div><div>Account access<strong>Active session</strong></div></div>`, '<button class="button danger" type="button" data-delete-agent-account>Delete agent account</button><button class="button secondary" type="button" data-edit-agent-profile>Edit profile</button><button class="button primary" type="button" data-close-modal>Close</button>');
+  const initial = agent.name.slice(0, 2).toUpperCase();
+  const memberSince = agent.created_at
+    ? new Date(agent.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : 'Active session';
+
+  const modalContent = `
+    <div class="profile-modal-header">
+      <div class="profile-hex-avatar">
+        <span class="profile-hex-initials">${escapeHtml(initial)}</span>
+      </div>
+      <h4 class="profile-agent-name">${escapeHtml(agent.name)}</h4>
+      <p class="profile-agent-role">RD Agent</p>
+    </div>
+    <div class="modal-body">
+      <div class="profile-detail-list">
+        <div class="profile-detail-row">
+          <span class="profile-detail-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </span>
+          <div class="profile-detail-info">
+            <p class="profile-detail-label">Phone number</p>
+            <p class="profile-detail-value">${escapeHtml(agent.phone)}</p>
+          </div>
+        </div>
+        <div class="profile-detail-row">
+          <span class="profile-detail-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </span>
+          <div class="profile-detail-info">
+            <p class="profile-detail-label">Email address</p>
+            <p class="profile-detail-value">${escapeHtml(agent.email || 'Not provided')}</p>
+          </div>
+        </div>
+        <div class="profile-detail-row">
+          <span class="profile-detail-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <div class="profile-detail-info">
+            <p class="profile-detail-label">Account access</p>
+            <p class="profile-detail-value">Active session</p>
+          </div>
+        </div>
+        <div class="profile-detail-row">
+          <span class="profile-detail-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <div class="profile-detail-info">
+            <p class="profile-detail-label">Member since</p>
+            <p class="profile-detail-value">${escapeHtml(memberSince)}</p>
+          </div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="profile-action-btn" type="button" data-edit-agent-profile>Edit profile</button>
+        <button class="profile-action-btn danger" type="button" data-delete-agent-account>Delete account</button>
+        <button class="profile-signout-row" type="button" id="profile-signout-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Sign out</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Build modal manually without the generic footer
+  const wasOpen = $('#modal-root')?.innerHTML.trim() !== '';
+  $('#modal-root').innerHTML = `<div class="modal-overlay" role="dialog" aria-modal="true"><section class="modal profile-modal">${modalContent}<button class="modal-close profile-modal-close" data-close-modal aria-label="Close">✕</button></section></div>`;
+  if (!wasOpen) history.pushState({ modal: true }, '');
+
+  // Wire up sign-out inside profile
+  const signOutBtn = $('#profile-signout-btn');
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', async () => {
+      try {
+        const token = await tokenStorage.get();
+        await api('/api/auth/logout', { method: 'POST', body: token ? { refresh_token: token } : {} });
+      } catch { /* session cleared regardless */ }
+      await tokenStorage.clear();
+      closeModal();
+      showAuth();
+    }, { once: true });
+  }
 }
 function openAgentProfileEdit() {
   if (!state.agent) return;
@@ -807,6 +907,7 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('button');
   if (!button) return;
   if (button.dataset.authMode) return showAuth(button.dataset.authMode);
+  if (button.id === 'settings-nav-btn') { closeSidebar(); return openAgentProfile(); }
   if (button.dataset.view) return setView(button.dataset.view);
   if (button.dataset.nav) return setView(button.dataset.nav);
   if (button.id === 'menu-button') return toggleSidebar();
