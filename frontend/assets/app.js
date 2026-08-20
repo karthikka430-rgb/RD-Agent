@@ -255,7 +255,7 @@ function toggleSidebar() {
   }
 }
 
-// Swipe gesture support: L -> R opens sidebar, R -> L closes sidebar
+// Swipe gesture support: Edge swipe (L -> R from screen edge) opens sidebar, R -> L closes sidebar
 (function initSidebarSwipeGestures() {
   let touchStartX = 0;
   let touchStartY = 0;
@@ -287,8 +287,8 @@ function toggleSidebar() {
     const sidebar = $('#sidebar');
     const isOpen = sidebar?.classList.contains('open');
 
-    if (deltaX > 0 && !isOpen) {
-      // Swiped Left to Right -> Open Sidebar
+    // ONLY open sidebar if swipe started from the left edge (<= 35px) like native mobile apps
+    if (deltaX > 0 && !isOpen && touchStartX <= 35) {
       openSidebar();
     } else if (deltaX < 0 && isOpen) {
       // Swiped Right to Left -> Close Sidebar
