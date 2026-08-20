@@ -242,6 +242,48 @@ function toggleSidebar() {
     openSidebar();
   }
 }
+
+// Swipe gesture support: L -> R opens sidebar, R -> L closes sidebar
+(function initSidebarSwipeGestures() {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+
+  window.addEventListener('touchstart', (e) => {
+    if (window.innerWidth > 880) return;
+    if ($('#modal-root')?.innerHTML.trim() !== '') return;
+    if (e.touches.length !== 1) return;
+
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+  }, { passive: true });
+
+  window.addEventListener('touchend', (e) => {
+    if (window.innerWidth > 880) return;
+    if ($('#modal-root')?.innerHTML.trim() !== '') return;
+    if (e.changedTouches.length !== 1) return;
+
+    const deltaX = e.changedTouches[0].clientX - touchStartX;
+    const deltaY = e.changedTouches[0].clientY - touchStartY;
+    const elapsed = Date.now() - touchStartTime;
+
+    // Must be predominantly horizontal swipe within a reasonable duration
+    if (elapsed > 600) return;
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+
+    const sidebar = $('#sidebar');
+    const isOpen = sidebar?.classList.contains('open');
+
+    if (deltaX > 0 && !isOpen) {
+      // Swiped Left to Right -> Open Sidebar
+      openSidebar();
+    } else if (deltaX < 0 && isOpen) {
+      // Swiped Right to Left -> Close Sidebar
+      closeSidebar();
+    }
+  }, { passive: true });
+})();
 function handleBackAction() {
   // 1. Close any open modal first (stays on same view)
   if ($('#modal-root')?.innerHTML.trim() !== '') {
