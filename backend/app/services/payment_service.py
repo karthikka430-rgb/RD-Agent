@@ -33,7 +33,14 @@ def payment_receipt_history(payment):
     if receipts:
         return [receipt.public_dict() for receipt in receipts]
     # Payments recorded before partial collection support are their own original receipt.
-    return [{"id": None, "amount": str(payment.amount), "payment_date": payment.payment_date.isoformat(), "receipt_number": payment.receipt_number, "legacy": True}]
+    return [{
+        "id": None,
+        "amount": str(payment.amount),
+        "payment_date": payment.payment_date.isoformat(),
+        "receipt_number": payment.receipt_number,
+        "created_at": payment.created_at.isoformat() if hasattr(payment, "created_at") and payment.created_at else None,
+        "legacy": True,
+    }]
 
 
 def payment_collection_summary(customer, payment):

@@ -48,6 +48,18 @@ function formatCalendarDate(value) {
   }
   return value;
 }
+function formatTime(value) {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).format(parsed);
+}
+function formatReceiptDateTime(paymentDate, createdAt) {
+  const dateStr = formatCalendarDate(paymentDate);
+  const timeStr = formatTime(createdAt);
+  if (!timeStr) return dateStr;
+  return `${dateStr}, ${timeStr}`;
+}
 function remainingDuration(maturityDate) {
   const target = calendarDate(maturityDate);
   if (!target) return 'Duration unavailable';
@@ -352,7 +364,7 @@ function selectedCollectionPeriod() {
 }
 function receiptMarkup(receipts) {
   return receipts.length
-    ? `<div class="receipt-list">${receipts.map(receipt => `<div><code>${escapeHtml(receipt.receipt_number)}</code><small>${money(receipt.amount)} · ${formatCalendarDate(receipt.payment_date)}</small></div>`).join('')}</div>`
+    ? `<div class="receipt-list">${receipts.map(receipt => `<div><code>${escapeHtml(receipt.receipt_number)}</code><small>${money(receipt.amount)} · ${formatReceiptDateTime(receipt.payment_date, receipt.created_at)}</small></div>`).join('')}</div>`
     : '<span class="muted">No receipt yet</span>';
 }
 async function loadCollections() {
@@ -850,7 +862,7 @@ function renderCustomerProfile(result, showAllReceipts) {
         </div>
         ${receipts.length
           ? `<div class="receipts-scroll-list">${(showAllReceipts ? receipts : receipts.slice(0, 3)).map(r =>
-              `<div class="receipt-item-row"><div><strong>${formatCalendarDate(r.payment_date)}</strong><small>${escapeHtml(r.receipt_number)} · ${period(r.month, r.year)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`
+              `<div class="receipt-item-row"><div><strong>${formatReceiptDateTime(r.payment_date, r.created_at)}</strong><small>${escapeHtml(r.receipt_number)} · ${period(r.month, r.year)}</small></div><strong class="amount-green">${money(r.amount)}</strong></div>`
             ).join('')}</div>`
           : '<div class="muted font-sm">No receipts yet</div>'
         }
