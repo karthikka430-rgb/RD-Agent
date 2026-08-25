@@ -267,52 +267,65 @@
 
         <!-- COLLECTION REGISTER VIEW -->
         <section id="view-collections" class="view">
-          <div class="section-title-wrap">
-            <p class="subtitle">Mark monthly RD installments paid as you collect them.</p>
-          </div>
 
-          <div class="month-selector-card">
-            <div class="period-input-wrap">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <!-- Subtitle -->
+          <p class="cr-subtitle">Mark monthly RD installments paid as you collect them.</p>
+
+          <!-- Month selector row -->
+          <div class="cr-month-row">
+            <div class="cr-period-field">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <input id="collection-month" type="month" />
             </div>
-            <button id="refresh-collections" class="button secondary btn-load-month">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <button id="refresh-collections" class="cr-load-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Load month
             </button>
           </div>
 
-          <div id="collection-metrics" class="metric-grid collection-summary-grid"></div>
+          <!-- 4 count summary cards -->
+          <div id="collection-metrics" class="cr-summary-grid"></div>
 
-          <section class="panel">
-            <div class="table-toolbar">
-              <div class="search-input">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input id="collection-search" placeholder="Search customer by name or account no..." />
-              </div>
+          <!-- 2 amount cards -->
+          <div id="cr-amount-row" class="cr-amount-row"></div>
+
+          <!-- Search + filter -->
+          <div class="cr-search-row">
+            <div class="cr-search-field">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="collection-search" placeholder="Search customer by name or account number" />
             </div>
-            <div class="table-wrap">
-              <table class="collection-table">
+            <button class="cr-filter-btn" aria-label="Filter collections" title="Filter">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><circle cx="17" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>
+            </button>
+          </div>
+
+          <!-- Customer collection table -->
+          <div class="cr-table-panel">
+            <div class="cr-table-wrap">
+              <table class="cr-collection-table">
                 <thead>
                   <tr>
-                    <th style="width: 40px;"></th>
+                    <th></th>
                     <th>CUSTOMER</th>
                     <th>ACC. NO.</th>
                     <th>AMOUNT</th>
                     <th>STATUS</th>
-                    <th class="right">ACTION</th>
+                    <th>ACTION</th>
                   </tr>
                 </thead>
                 <tbody id="collections-table"></tbody>
               </table>
             </div>
-            <div id="collection-pagination" class="pagination"></div>
-          </section>
+            <div id="collection-pagination" class="cr-pagination"></div>
+          </div>
 
-          <div class="info-tip-box">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <!-- Info tip -->
+          <div class="cr-info-tip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <span>Tick a customer when payment is collected. Once marked as paid, the OFF button can be used to undo the payment if it was recorded by mistake.</span>
           </div>
+
         </section>
 
         <!-- CUSTOMERS VIEW -->

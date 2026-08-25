@@ -373,25 +373,72 @@ async function loadCollections() {
     const { month, year } = selectedCollectionPeriod();
     const result = await api(`/api/collections/?month=${month}&year=${year}`);
     state.collectionRows = result.collections;
-    const metrics = [
-      ['Total customers', result.summary.total_customers, 'Active accounts', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`, 'green'],
-      ['Paid customers', result.summary.paid_customers, 'Installments completed', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`, 'green'],
-      ['Partly paid', result.summary.partial_customers, 'Balance still pending', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`, 'blue'],
-      ['Pending customers', result.summary.pending_customers, 'No amount collected', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`, 'orange'],
-      ['Total collection amount', money(result.summary.total_collection_amount), 'Amount received so far', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'teal'],
+
+    // --- 4 compact count cards ---
+    const countCards = [
+      ['Total',       result.summary.total_customers,   'teal',   `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`],
+      ['Paid',        result.summary.paid_customers,    'green',  `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`],
+      ['Partly paid', result.summary.partial_customers, 'blue',   `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`],
+      ['Pending',     result.summary.pending_customers, 'orange', `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`],
     ];
-    $('#collection-metrics').innerHTML = metrics.map(([label, value, note, icon, color]) => `<article class="metric"><div class="metric-header"><span class="metric-icon-badge ${color}">${icon}</span><div class="metric-label">${label}</div></div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></article>`).join('');
-    $('#collections-table').innerHTML = result.collections.length
-      ? result.collections.map(item => {
-        const customer = item.customer;
-        const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
-        const editCell = item.payment ? `<button class="danger-action" data-collection-off="${customer.id}">OFF</button>` : '<span class="muted">—</span>';
-        return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
-      }).join('')
-      : emptyRow(6, 'No active RD accounts have a term covering this collection month.');
+    $('#collection-metrics').innerHTML = countCards.map(([label, value, color, icon]) =>
+      `<article class="cr-stat-card"><span class="cr-stat-icon ${color}">${icon}</span><span class="cr-stat-label">${label}</span><span class="cr-stat-value">${value}</span></article>`
+    ).join('');
+
+    // --- 2 amount cards: total collected + pending amount ---
+    // Pending amount = sum of remaining_amount for all non-fully-paid rows
+    const pendingAmt = result.collections.reduce((sum, row) => sum + Number(row.remaining_amount || 0), 0);
+    const amountRow = $('#cr-amount-row');
+    if (amountRow) {
+      amountRow.innerHTML = `
+        <div class="cr-amount-card teal">
+          <div class="cr-amount-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div class="cr-amount-title">Total collection amount</div>
+          <div class="cr-amount-value">${money(result.summary.total_collection_amount)}</div>
+          <div class="cr-amount-note">Amount received so far</div>
+        </div>
+        <div class="cr-amount-card red">
+          <div class="cr-amount-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div class="cr-amount-title">Pending amount</div>
+          <div class="cr-amount-value">${money(pendingAmt)}</div>
+          <div class="cr-amount-note">Amount yet to be collected</div>
+        </div>`;
+    }
+    renderCollectionTable();
   } catch (error) {
     toast(error.message, 'error');
   }
+}
+
+function renderCollectionTable(searchTerm = '') {
+  let rows = state.collectionRows || [];
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase();
+    rows = rows.filter(item => 
+      item.customer.customer_name.toLowerCase().includes(term) || 
+      item.customer.account_number.toLowerCase().includes(term)
+    );
+  }
+  
+  $('#collections-table').innerHTML = rows.length
+    ? rows.map(item => {
+      const customer = item.customer;
+      const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
+      const offBtn = item.payment
+        ? `<button class="cr-off-btn" data-collection-off="${customer.id}">OFF</button>`
+        : `<span class="cr-dash">—</span>`;
+      const statusClass = item.is_paid ? 'paid' : item.is_partial ? 'partial' : 'pending';
+      const statusLabel = item.is_paid ? 'Paid' : item.is_partial ? 'Partial' : 'Pending';
+      return `<tr>
+        <td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td>
+        <td><span class="cr-customer-name">${escapeHtml(customer.customer_name)}</span><span class="cr-customer-acc">${escapeHtml(customer.phone)}</span></td>
+        <td class="cr-amount-cell">${escapeHtml(customer.account_number)}</td>
+        <td class="cr-amount-cell">${money(customer.monthly_rd_amount)}</td>
+        <td><span class="cr-status ${statusClass}">${statusLabel}</span></td>
+        <td style="text-align:right;padding-right:0.6rem;">${offBtn}</td>
+      </tr>`;
+    }).join('')
+    : `<tr><td colspan="6" class="cr-empty">No accounts match the criteria.</td></tr>`;
 }
 
 async function loadCustomers() {
@@ -1158,6 +1205,9 @@ let customerSearchTimer;
 $('#customer-search').addEventListener('input', () => {
   clearTimeout(customerSearchTimer);
   customerSearchTimer = setTimeout(() => { state.customerPage = 1; loadCustomers(); }, 250);
+});
+$('#collection-search').addEventListener('input', (e) => {
+  renderCollectionTable(e.target.value);
 });
 $('#customer-status').addEventListener('change', () => { state.customerPage = 1; loadCustomers(); });
 document.addEventListener('input', event => {
