@@ -1619,6 +1619,14 @@ textarea::placeholder {
   margin-bottom: 0.15rem;
 }
 
+.metric-value.text-red {
+  color: var(--red);
+}
+
+.metric-value.text-teal {
+  color: var(--teal);
+}
+
 .metric-note {
   font-size: 0.625rem;
   color: var(--muted);

@@ -402,10 +402,10 @@ async function loadCollections() {
       ['Paid customers', result.summary.paid_customers, 'Installments completed', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`, 'green'],
       ['Partly paid', result.summary.partial_customers, 'Balance still pending', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`, 'blue'],
       ['Pending customers', result.summary.pending_customers, 'No amount collected', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`, 'orange'],
-      ['Total collection amount', money(result.summary.total_collection_amount), 'Amount received so far', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'teal'],
-      ['Pending amount', money(pendingAmount), 'Amount yet to be collected', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'red'],
+      ['Total collection amount', money(result.summary.total_collection_amount), 'Amount received so far', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'teal', 'text-teal'],
+      ['Pending amount', money(pendingAmount), 'Amount yet to be collected', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'red', 'text-red'],
     ];
-    $('#collection-metrics').innerHTML = metrics.map(([label, value, note, icon, color]) => `<article class="metric"><div class="metric-header"><span class="metric-icon-badge ${color}">${icon}</span><div class="metric-label">${label}</div></div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></article>`).join('');
+    $('#collection-metrics').innerHTML = metrics.map(([label, value, note, icon, color, valClass = '']) => `<article class="metric"><div class="metric-header"><span class="metric-icon-badge ${color}">${icon}</span><div class="metric-label">${label}</div></div><div class="metric-value ${valClass}">${value}</div><div class="metric-note">${note}</div></article>`).join('');
     renderCollectionsTable($('#collection-search')?.value || '');
   } catch (error) {
     toast(error.message, 'error');
