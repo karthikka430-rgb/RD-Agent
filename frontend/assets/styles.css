@@ -1549,7 +1549,7 @@ textarea::placeholder {
   }
   .collection-summary-grid > :nth-child(5),
   .collection-summary-grid > :nth-child(6) {
-    grid-column: span 2;
+    grid-column: span 1;
   }
 }
 
