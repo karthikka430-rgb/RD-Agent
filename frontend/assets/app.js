@@ -367,28 +367,46 @@ function receiptMarkup(receipts) {
     ? `<div class="receipt-list">${receipts.map(receipt => `<div><code>${escapeHtml(receipt.receipt_number)}</code><small>${money(receipt.amount)} · ${formatReceiptDateTime(receipt.payment_date, receipt.created_at)}</small></div>`).join('')}</div>`
     : '<span class="muted">No receipt yet</span>';
 }
+function renderCollectionsTable(searchTerm = '') {
+  const term = (searchTerm || $('#collection-search')?.value || '').trim().toLowerCase();
+  const rows = term
+    ? state.collectionRows.filter(item => {
+        const c = item.customer;
+        return (
+          String(c.customer_name || '').toLowerCase().includes(term) ||
+          String(c.account_number || '').toLowerCase().includes(term) ||
+          String(c.phone || '').toLowerCase().includes(term)
+        );
+      })
+    : state.collectionRows;
+
+  $('#collections-table').innerHTML = rows.length
+    ? rows.map(item => {
+        const customer = item.customer;
+        const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
+        const editCell = item.payment ? `<button class="danger-action" data-collection-off="${customer.id}">OFF</button>` : '<span class="muted">—</span>';
+        return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
+      }).join('')
+    : emptyRow(6, term ? 'No customers match your search.' : 'No active RD accounts have a term covering this collection month.');
+}
+
 async function loadCollections() {
   try {
     if (!$('#collection-month').value) $('#collection-month').value = currentMonth;
     const { month, year } = selectedCollectionPeriod();
     const result = await api(`/api/collections/?month=${month}&year=${year}`);
     state.collectionRows = result.collections;
+    const pendingAmount = result.collections.reduce((sum, item) => sum + Number(item.remaining_amount || 0), 0);
     const metrics = [
       ['Total customers', result.summary.total_customers, 'Active accounts', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`, 'green'],
       ['Paid customers', result.summary.paid_customers, 'Installments completed', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`, 'green'],
       ['Partly paid', result.summary.partial_customers, 'Balance still pending', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`, 'blue'],
       ['Pending customers', result.summary.pending_customers, 'No amount collected', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`, 'orange'],
       ['Total collection amount', money(result.summary.total_collection_amount), 'Amount received so far', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'teal'],
+      ['Pending amount', money(pendingAmount), 'Amount yet to be collected', `<span style="font-weight:800;font-size:0.95rem;">₹</span>`, 'red'],
     ];
     $('#collection-metrics').innerHTML = metrics.map(([label, value, note, icon, color]) => `<article class="metric"><div class="metric-header"><span class="metric-icon-badge ${color}">${icon}</span><div class="metric-label">${label}</div></div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></article>`).join('');
-    $('#collections-table').innerHTML = result.collections.length
-      ? result.collections.map(item => {
-        const customer = item.customer;
-        const title = item.is_paid ? 'Installment fully paid and permanently locked' : item.is_partial ? 'Add another amount to complete this installment' : 'Record an amount collected';
-        const editCell = item.payment ? `<button class="danger-action" data-collection-off="${customer.id}">OFF</button>` : '<span class="muted">—</span>';
-        return `<tr><td><label class="collection-check" title="${title}"><input type="checkbox" data-collection-toggle="${customer.id}" ${item.is_paid ? 'checked disabled' : ''} aria-label="Record collection for ${escapeHtml(customer.customer_name)}" /><span></span></label></td><td><strong>${escapeHtml(customer.customer_name)}</strong><small>${escapeHtml(customer.phone)}</small></td><td>${escapeHtml(customer.account_number)}</td><td>${money(customer.monthly_rd_amount)}</td><td>${statusTag(item.status)}</td><td class="right"><div class="row-actions">${editCell}</div></td></tr>`;
-      }).join('')
-      : emptyRow(6, 'No active RD accounts have a term covering this collection month.');
+    renderCollectionsTable($('#collection-search')?.value || '');
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -1158,6 +1176,14 @@ let customerSearchTimer;
 $('#customer-search').addEventListener('input', () => {
   clearTimeout(customerSearchTimer);
   customerSearchTimer = setTimeout(() => { state.customerPage = 1; loadCustomers(); }, 250);
+});
+
+let collectionSearchTimer;
+$('#collection-search')?.addEventListener('input', () => {
+  clearTimeout(collectionSearchTimer);
+  collectionSearchTimer = setTimeout(() => {
+    renderCollectionsTable($('#collection-search')?.value || '');
+  }, 150);
 });
 $('#customer-status').addEventListener('change', () => { state.customerPage = 1; loadCustomers(); });
 document.addEventListener('input', event => {
